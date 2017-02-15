@@ -129,8 +129,13 @@ Phaser.Tileset.prototype = {
     * @param {number} x - The x coordinate to draw to.
     * @param {number} y - The y coordinate to draw to.
     * @param {integer} index - The index of the tile within the set to draw.
+    * @param {number} width - The width to draw the tile at.
+    * @param {number} height - The height to draw the tile at.
     */
-    draw: function (context, x, y, index) {
+    draw: function (context, x, y, index, width, height) {
+
+        width = width || this.tileWidth;
+        height = height || this.tileHeight;
 
         //  Correct the tile index for the set and bias for interlacing
         var coordIndex = (index - this.firstgid) << 1;
@@ -145,8 +150,8 @@ Phaser.Tileset.prototype = {
                 this.tileHeight,
                 x,
                 y,
-                this.tileWidth,
-                this.tileHeight
+                width,
+                height
             );
         }
 

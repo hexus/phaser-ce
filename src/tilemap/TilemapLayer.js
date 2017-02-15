@@ -864,8 +864,8 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
 
     var width = this.layer.width;
     var height = this.layer.height;
-    var tw = this._mc.tileWidth;
-    var th = this._mc.tileHeight;
+    var tw = this._mc.tileWidth * this.scale.x;
+    var th = this._mc.tileHeight * this.scale.y;
 
     var tilesets = this._mc.tilesets;
     var lastAlpha = NaN;
@@ -949,12 +949,12 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
                         context.scale(-1, 1);
                     }
 
-                    set.draw(context, -tile.centerX, -tile.centerY, index);
+                    set.draw(context, -tile.centerX, -tile.centerY, index, tw, th);
                     context.restore();
                 }
                 else
                 {
-                    set.draw(context, tx, ty, index);
+                    set.draw(context, tx, ty, index, tw, th);
                 }
             }
             else if (this.debugSettings.missingImageFill)
@@ -989,8 +989,8 @@ Phaser.TilemapLayer.prototype.renderDeltaScroll = function (shiftX, shiftY) {
     var renderW = this.canvas.width;
     var renderH = this.canvas.height;
 
-    var tw = this._mc.tileWidth;
-    var th = this._mc.tileHeight;
+    var tw = this._mc.tileWidth * this.scale.x;
+    var th = this._mc.tileHeight * this.scale.y;
 
     // Only cells with coordinates in the "plus" formed by `left <= x <= right` OR `top <= y <= bottom` are drawn. These coordinates may be outside the layer bounds.
 
@@ -1066,13 +1066,15 @@ Phaser.TilemapLayer.prototype.renderFull = function () {
     var renderW = this.canvas.width;
     var renderH = this.canvas.height;
 
-    var tw = this._mc.tileWidth;
-    var th = this._mc.tileHeight;
+    var tw = this._mc.tileWidth * this.scale.x;
+    var th = this._mc.tileHeight * this.scale.y;
 
     var left = Math.floor(scrollX / tw);
     var right = Math.floor((renderW - 1 + scrollX) / tw);
     var top = Math.floor(scrollY / th);
     var bottom = Math.floor((renderH - 1 + scrollY) / th);
+
+    //console.log(this.scale.x, this.scale.y, left, right, top, bottom);
 
     this.context.clearRect(0, 0, renderW, renderH);
 
@@ -1189,8 +1191,8 @@ Phaser.TilemapLayer.prototype.renderDebug = function () {
 
     var width = this.layer.width;
     var height = this.layer.height;
-    var tw = this._mc.tileWidth;
-    var th = this._mc.tileHeight;
+    var tw = this._mc.tileWidth * this.scale.x;
+    var th = this._mc.tileHeight * this.scale.y;
 
     var left = Math.floor(scrollX / tw);
     var right = Math.floor((renderW - 1 + scrollX) / tw);
