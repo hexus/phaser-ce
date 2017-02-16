@@ -317,6 +317,8 @@ Phaser.TilemapLayer.prototype.postUpdate = function () {
     {
         this.position.x = (this.game.camera.view.x + this.cameraOffset.x) / this.game.camera.scale.x;
         this.position.y = (this.game.camera.view.y + this.cameraOffset.y) / this.game.camera.scale.y;
+        this.scrollFactorX = 1.0 / this.game.camera.scale.x;
+        this.scrollFactorY = 1.0 / this.game.camera.scale.y;
         this.layerScaleX = this.game.camera.scale.x;
         this.layerScaleY = this.game.camera.scale.y;
     }
@@ -339,6 +341,8 @@ Phaser.TilemapLayer.prototype._renderCanvas = function (renderSession) {
     {
         this.position.x = (this.game.camera.view.x + this.cameraOffset.x) / this.game.camera.scale.x;
         this.position.y = (this.game.camera.view.y + this.cameraOffset.y) / this.game.camera.scale.y;
+        this.scrollFactorX = 1.0 / this.game.camera.scale.x;
+        this.scrollFactorY = 1.0 / this.game.camera.scale.y;
         this.layerScaleX = this.game.camera.scale.x;
         this.layerScaleY = this.game.camera.scale.y;
     }
@@ -365,6 +369,8 @@ Phaser.TilemapLayer.prototype._renderWebGL = function (renderSession) {
     {
         this.position.x = (this.game.camera.view.x + this.cameraOffset.x) / this.game.camera.scale.x;
         this.position.y = (this.game.camera.view.y + this.cameraOffset.y) / this.game.camera.scale.y;
+        this.scrollFactorX = 1.0 / this.game.camera.scale.x;
+        this.scrollFactorY = 1.0 / this.game.camera.scale.y;
         this.layerScaleX = this.game.camera.scale.x;
         this.layerScaleY = this.game.camera.scale.y;
     }
@@ -959,7 +965,7 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
                 if (tile.rotation || tile.flipped)
                 {
                     context.save();
-                    context.translate(tx + tile.centerX, ty + tile.centerY);
+                    context.translate(tx + tile.centerX * this.layerScaleX, ty + tile.centerY * this.layerScaleY);
                     context.rotate(tile.rotation);
 
                     if (tile.flipped)
@@ -967,7 +973,7 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
                         context.scale(-1, 1);
                     }
 
-                    set.draw(context, -tile.centerX, -tile.centerY, index, tw, th);
+                    set.draw(context, -tile.centerX * this.layerScaleX, -tile.centerY * this.layerScaleY, index, tw, th);
                     context.restore();
                 }
                 else
