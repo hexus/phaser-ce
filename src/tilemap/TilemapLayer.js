@@ -222,6 +222,18 @@ Phaser.TilemapLayer = function (game, tilemap, index, width, height) {
     this._scrollY = 0;
 
     /**
+     * The X axis scale of the layer's tiles.
+     * @property {number}
+     */
+    this.layerScaleX = 1;
+
+     /**
+      * The Y axis scale of the layer's tiles.
+      * @property {number}
+      */
+    this.layerScaleY = 1;
+
+    /**
      * The X axis position offset of the layer.
      * @property {number}
      */
@@ -659,11 +671,11 @@ Phaser.TilemapLayer.prototype.getTiles = function (x, y, width, height, collides
     y = this._fixY(y);
 
     //  Convert the pixel values into tile coordinates
-    var tx = Math.floor(x / (this._mc.cw * this.scale.x));
-    var ty = Math.floor(y / (this._mc.ch * this.scale.y));
+    var tx = Math.floor(x / (this._mc.cw * this.layerScaleX));
+    var ty = Math.floor(y / (this._mc.ch * this.layerScaleY));
     //  Don't just use ceil(width/cw) to allow account for x/y diff within cell
-    var tw = Math.ceil((x + width) / (this._mc.cw * this.scale.x)) - tx;
-    var th = Math.ceil((y + height) / (this._mc.ch * this.scale.y)) - ty;
+    var tw = Math.ceil((x + width) / (this._mc.cw * this.layerScaleX)) - tx;
+    var th = Math.ceil((y + height) / (this._mc.ch * this.layerScaleY)) - ty;
 
     while (this._results.length)
     {
@@ -864,8 +876,8 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
 
     var width = this.layer.width;
     var height = this.layer.height;
-    var tw = this._mc.tileWidth * this.scale.x;
-    var th = this._mc.tileHeight * this.scale.y;
+    var tw = this._mc.tileWidth * this.layerScaleX;
+    var th = this._mc.tileHeight * this.layerScaleY;
 
     var tilesets = this._mc.tilesets;
     var lastAlpha = NaN;
@@ -989,8 +1001,8 @@ Phaser.TilemapLayer.prototype.renderDeltaScroll = function (shiftX, shiftY) {
     var renderW = this.canvas.width;
     var renderH = this.canvas.height;
 
-    var tw = this._mc.tileWidth * this.scale.x;
-    var th = this._mc.tileHeight * this.scale.y;
+    var tw = this._mc.tileWidth * this.layerScaleX;
+    var th = this._mc.tileHeight * this.layerScaleY;
 
     // Only cells with coordinates in the "plus" formed by `left <= x <= right` OR `top <= y <= bottom` are drawn. These coordinates may be outside the layer bounds.
 
@@ -1066,8 +1078,8 @@ Phaser.TilemapLayer.prototype.renderFull = function () {
     var renderW = this.canvas.width;
     var renderH = this.canvas.height;
 
-    var tw = this._mc.tileWidth * this.scale.x;
-    var th = this._mc.tileHeight * this.scale.y;
+    var tw = this._mc.tileWidth * this.layerScaleX;
+    var th = this._mc.tileHeight * this.layerScaleY;
 
     var left = Math.floor(scrollX / tw);
     var right = Math.floor((renderW - 1 + scrollX) / tw);
@@ -1191,8 +1203,8 @@ Phaser.TilemapLayer.prototype.renderDebug = function () {
 
     var width = this.layer.width;
     var height = this.layer.height;
-    var tw = this._mc.tileWidth * this.scale.x;
-    var th = this._mc.tileHeight * this.scale.y;
+    var tw = this._mc.tileWidth * this.layerScaleX;
+    var th = this._mc.tileHeight * this.layerScaleY;
 
     var left = Math.floor(scrollX / tw);
     var right = Math.floor((renderW - 1 + scrollX) / tw);
