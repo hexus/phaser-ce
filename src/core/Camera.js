@@ -148,11 +148,23 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this._edge = 0;
 
     /**
-    * @property {Phaser.Point} position - Current position of the camera in world.
+    * @property {Phaser.Point} _position - Current position of the camera in world.
     * @private
     * @default
     */
     this._position = new Phaser.Point();
+
+    /**
+     * @property {Phaser.Point} _lastPosition
+     * @private
+     */
+    this._lastPosition = new Phaser.Point();
+
+    /**
+     * @property {Phaser.Point} _lastScale
+     * @private
+     */
+    this._lastScale = new Phaser.Point();
 
     /**
     * @property {Object} _shake - The shake effect container.
@@ -504,6 +516,20 @@ Phaser.Camera.prototype = {
         {
             this.updateShake();
         }
+
+        // Center the camera when the scale changes
+        if (this._lastScale.x !== this.scale.x || this._lastScale.y !== this.scale.y) {
+            var deltaX = (this.x + this.view.width * this.scale.x) - (this.x + this.view.width * this._lastScale.x);
+            var deltaY = (this.y + this.view.height * this.scale.y) - (this.y + this.view.height * this._lastScale.y);
+            
+            this.view.x += deltaX;
+            this.view.y += deltaY;
+        }
+
+        // Store the current scale as the last scale for the next update loop
+        this._lastScale.copyFrom(this.scale);
+
+        // TODO: Extract to method, do the same scale fix for updateTarget()?
 
         if (this.bounds)
         {
