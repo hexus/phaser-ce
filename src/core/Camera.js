@@ -517,19 +517,10 @@ Phaser.Camera.prototype = {
             this.updateShake();
         }
 
-        // Center the camera when the scale changes
-        if (this._lastScale.x !== this.scale.x || this._lastScale.y !== this.scale.y) {
-            var deltaX = (this.x + this.view.width * this.scale.x) - (this.x + this.view.width * this._lastScale.x);
-            var deltaY = (this.y + this.view.height * this.scale.y) - (this.y + this.view.height * this._lastScale.y);
-            
-            this.view.x += deltaX;
-            this.view.y += deltaY;
+        if (!this.target)
+        {
+            this.fixScale();
         }
-
-        // Store the current scale as the last scale for the next update loop
-        this._lastScale.copyFrom(this.scale);
-
-        // TODO: Extract to method, do the same scale fix for updateTarget()?
 
         if (this.bounds)
         {
@@ -615,6 +606,27 @@ Phaser.Camera.prototype = {
     },
 
     /**
+     * Keep the camera centred correctly when its scale changes.
+     *
+     * @method Phaser.Camera#fixScale
+     * @private
+     */
+    fixScale: function () {
+
+        // Unscale the last position and apply the new scale using the centre
+        // of the view as the pivot
+        if (this._lastScale.x !== this.scale.x || this._lastScale.y !== this.scale.y) {
+            this.view.x = ((this._lastPosition.x + this.view.halfWidth) / this._lastScale.x * this.scale.x) - this.view.halfWidth;
+            this.view.y = ((this._lastPosition.y + this.view.halfHeight) / this._lastScale.y * this.scale.y) - this.view.halfHeight;
+        }
+
+        // Store the current position and scale for the next update loop
+        this._lastPosition.copyFrom(this.position);
+        this._lastScale.copyFrom(this.scale);
+
+    },
+
+    /**
     * Internal method that handles tracking a sprite.
     *
     * @method Phaser.Camera#updateTarget
@@ -654,6 +666,8 @@ Phaser.Camera.prototype = {
             this.view.x = this.game.math.linear(this.view.x, this._targetPosition.x - this.view.halfWidth, this.lerp.x);
             this.view.y = this.game.math.linear(this.view.y, this._targetPosition.y - this.view.halfHeight, this.lerp.y);
         }
+
+        this.fixScale();
 
         if (this.bounds)
         {
