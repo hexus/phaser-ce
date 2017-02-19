@@ -222,28 +222,16 @@ Phaser.TilemapLayer = function (game, tilemap, index, width, height) {
     this._scrollY = 0;
 
     /**
-     * The X axis scale of the layer's tiles.
-     * @property {number}
+     * The scale of the layer's tiles.
+     * @property {Phaser.Point}
      */
-    this.layerScaleX = 1;
-
-     /**
-      * The Y axis scale of the layer's tiles.
-      * @property {number}
-      */
-    this.layerScaleY = 1;
+    this.tileScale = new Phaser.Point(1, 1);
 
     /**
-     * The X axis position offset of the layer.
+     * The scrolling offset of the layer's tiles.
      * @property {number}
      */
-    this.layerOffsetX = this.layer.offsetX || 0;
-
-    /**
-     * The Y axis position offset of the layer.
-     * @type {number}
-     */
-    this.layerOffsetY = this.layer.offsetY || 0;
+    this.tileOffset = new Phaser.Point(this.layer.offsetX || 0, this.layer.offsetY || 0);
 
     /**
     * Used for caching the tiles / array of tiles.
@@ -319,12 +307,12 @@ Phaser.TilemapLayer.prototype.postUpdate = function () {
         this.position.y = (this.game.camera.view.y + this.cameraOffset.y) / this.game.camera.scale.y;
         this.scrollFactorX = 1.0 / this.game.camera.scale.x;
         this.scrollFactorY = 1.0 / this.game.camera.scale.y;
-        this.layerScaleX = this.game.camera.scale.x;
-        this.layerScaleY = this.game.camera.scale.y;
+        this.tileScale.x = this.game.camera.scale.x;
+        this.tileScale.y = this.game.camera.scale.y;
     }
 
-    this._scrollX = (this.game.camera.view.x - this.layerOffsetX) * this.scrollFactorX / this.scale.x;
-    this._scrollY = (this.game.camera.view.y - this.layerOffsetY) * this.scrollFactorY / this.scale.y;
+    this._scrollX = (this.game.camera.view.x - this.tileOffset.x) * this.scrollFactorX / this.scale.x;
+    this._scrollY = (this.game.camera.view.y - this.tileOffset.y) * this.scrollFactorY / this.scale.y;
 
 };
 
@@ -343,12 +331,12 @@ Phaser.TilemapLayer.prototype._renderCanvas = function (renderSession) {
         this.position.y = (this.game.camera.view.y + this.cameraOffset.y) / this.game.camera.scale.y;
         this.scrollFactorX = 1.0 / this.game.camera.scale.x;
         this.scrollFactorY = 1.0 / this.game.camera.scale.y;
-        this.layerScaleX = this.game.camera.scale.x;
-        this.layerScaleY = this.game.camera.scale.y;
+        this.tileScale.x = this.game.camera.scale.x;
+        this.tileScale.y = this.game.camera.scale.y;
     }
 
-    this._scrollX = (this.game.camera.view.x - this.layerOffsetX) * this.scrollFactorX / this.scale.x;
-    this._scrollY = (this.game.camera.view.y - this.layerOffsetY) * this.scrollFactorY / this.scale.y;
+    this._scrollX = (this.game.camera.view.x - this.tileOffset.x) * this.scrollFactorX / this.scale.x;
+    this._scrollY = (this.game.camera.view.y - this.tileOffset.y) * this.scrollFactorY / this.scale.y;
 
     this.render();
 
@@ -371,12 +359,12 @@ Phaser.TilemapLayer.prototype._renderWebGL = function (renderSession) {
         this.position.y = (this.game.camera.view.y + this.cameraOffset.y) / this.game.camera.scale.y;
         this.scrollFactorX = 1.0 / this.game.camera.scale.x;
         this.scrollFactorY = 1.0 / this.game.camera.scale.y;
-        this.layerScaleX = this.game.camera.scale.x;
-        this.layerScaleY = this.game.camera.scale.y;
+        this.tileScale.x = this.game.camera.scale.x;
+        this.tileScale.y = this.game.camera.scale.y;
     }
     
-    this._scrollX = (this.game.camera.view.x - this.layerOffsetX) * this.scrollFactorX / this.scale.x;
-    this._scrollY = (this.game.camera.view.y - this.layerOffsetY) * this.scrollFactorY / this.scale.y;
+    this._scrollX = (this.game.camera.view.x - this.tileOffset.x) * this.scrollFactorX / this.scale.x;
+    this._scrollY = (this.game.camera.view.y - this.tileOffset.y) * this.scrollFactorY / this.scale.y;
 
     this.render();
 
@@ -448,28 +436,28 @@ Phaser.TilemapLayer.prototype.resizeWorld = function () {
 };
 
 /**
- * Get the X axis position offset of this layer.
+ * Get the X axis position offset of this layer's tiles.
  *
- * @method Phaser.TilemapLayer#getLayerOffsetY
+ * @method Phaser.TilemapLayer#getLayerOffsetX
  * @public
  * @return {number}
  */
-Phaser.TilemapLayer.prototype.getLayerOffsetX = function () {
+Phaser.TilemapLayer.prototype.getTileOffsetX = function () {
 
-    return this.layerOffsetX || ((!this.fixedToCamera) ? this.position.x : 0);
+    return this.tileOffset.x || ((!this.fixedToCamera) ? this.position.x : 0);
 
 };
 
 /**
- * Get the Y axis position offset of this layer.
+ * Get the Y axis position offset of this layer's tiles.
  *
  * @method Phaser.TilemapLayer#getLayerOffsetY
  * @public
  * @return {number}
  */
-Phaser.TilemapLayer.prototype.getLayerOffsetY = function () {
+Phaser.TilemapLayer.prototype.getTileOffsetY = function () {
 
-    return this.layerOffsetY || ((!this.fixedToCamera) ? this.position.y : 0);
+    return this.tileOffset.y || ((!this.fixedToCamera) ? this.position.y : 0);
 
 };
 
@@ -683,11 +671,11 @@ Phaser.TilemapLayer.prototype.getTiles = function (x, y, width, height, collides
     y = this._fixY(y);
 
     //  Convert the pixel values into tile coordinates
-    var tx = Math.floor(x / (this._mc.cw * this.layerScaleX));
-    var ty = Math.floor(y / (this._mc.ch * this.layerScaleY));
+    var tx = Math.floor(x / (this._mc.cw * this.tileScale.x));
+    var ty = Math.floor(y / (this._mc.ch * this.tileScale.y));
     //  Don't just use ceil(width/cw) to allow account for x/y diff within cell
-    var tw = Math.ceil((x + width) / (this._mc.cw * this.layerScaleX)) - tx;
-    var th = Math.ceil((y + height) / (this._mc.ch * this.layerScaleY)) - ty;
+    var tw = Math.ceil((x + width) / (this._mc.cw * this.tileScale.x)) - tx;
+    var th = Math.ceil((y + height) / (this._mc.ch * this.tileScale.y)) - ty;
 
     while (this._results.length)
     {
@@ -775,7 +763,7 @@ Phaser.TilemapLayer.prototype.resetTilesetCache = function () {
  * This method will set the scale of the tilemap as well as update the underlying block data of this layer.
  * 
  * @method Phaser.TilemapLayer#setScale
- * @param {number} [xScale=1] - The scale factor along the X-plane 
+ * @param {number} [xScale=1] - The scale factor along the X-plane
  * @param {number} [yScale] - The scale factor along the Y-plane
  */
 Phaser.TilemapLayer.prototype.setScale = function (xScale, yScale) {
@@ -888,8 +876,8 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
 
     var width = this.layer.width;
     var height = this.layer.height;
-    var tw = this._mc.tileWidth * this.layerScaleX;
-    var th = this._mc.tileHeight * this.layerScaleY;
+    var tw = this._mc.tileWidth * this.tileScale.x;
+    var th = this._mc.tileHeight * this.tileScale.y;
 
     var tilesets = this._mc.tilesets;
     var lastAlpha = NaN;
@@ -965,7 +953,7 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
                 if (tile.rotation || tile.flipped)
                 {
                     context.save();
-                    context.translate(tx + tile.centerX * this.layerScaleX, ty + tile.centerY * this.layerScaleY);
+                    context.translate(tx + tile.centerX * this.tileScale.x, ty + tile.centerY * this.tileScale.y);
                     context.rotate(tile.rotation);
 
                     if (tile.flipped)
@@ -973,7 +961,7 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
                         context.scale(-1, 1);
                     }
 
-                    set.draw(context, -tile.centerX * this.layerScaleX, -tile.centerY * this.layerScaleY, index, tw, th);
+                    set.draw(context, -tile.centerX * this.tileScale.x, -tile.centerY * this.tileScale.y, index, tw, th);
                     context.restore();
                 }
                 else
@@ -1013,8 +1001,8 @@ Phaser.TilemapLayer.prototype.renderDeltaScroll = function (shiftX, shiftY) {
     var renderW = this.canvas.width;
     var renderH = this.canvas.height;
 
-    var tw = this._mc.tileWidth * this.layerScaleX;
-    var th = this._mc.tileHeight * this.layerScaleY;
+    var tw = this._mc.tileWidth * this.tileScale.x;
+    var th = this._mc.tileHeight * this.tileScale.y;
 
     // Only cells with coordinates in the "plus" formed by `left <= x <= right` OR `top <= y <= bottom` are drawn. These coordinates may be outside the layer bounds.
 
@@ -1090,15 +1078,13 @@ Phaser.TilemapLayer.prototype.renderFull = function () {
     var renderW = this.canvas.width;
     var renderH = this.canvas.height;
 
-    var tw = this._mc.tileWidth * this.layerScaleX;
-    var th = this._mc.tileHeight * this.layerScaleY;
+    var tw = this._mc.tileWidth * this.tileScale.x;
+    var th = this._mc.tileHeight * this.tileScale.y;
 
     var left = Math.floor(scrollX / tw);
     var right = Math.floor((renderW - 1 + scrollX) / tw);
     var top = Math.floor(scrollY / th);
     var bottom = Math.floor((renderH - 1 + scrollY) / th);
-
-    //console.log(this.scale.x, this.scale.y, left, right, top, bottom);
 
     this.context.clearRect(0, 0, renderW, renderH);
 
@@ -1215,8 +1201,8 @@ Phaser.TilemapLayer.prototype.renderDebug = function () {
 
     var width = this.layer.width;
     var height = this.layer.height;
-    var tw = this._mc.tileWidth * this.layerScaleX;
-    var th = this._mc.tileHeight * this.layerScaleY;
+    var tw = this._mc.tileWidth * this.tileScale.x;
+    var th = this._mc.tileHeight * this.tileScale.y;
 
     var left = Math.floor(scrollX / tw);
     var right = Math.floor((renderW - 1 + scrollX) / tw);
