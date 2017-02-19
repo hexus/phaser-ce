@@ -222,6 +222,12 @@ Phaser.TilemapLayer = function (game, tilemap, index, width, height) {
     this._scrollY = 0;
 
     /**
+     * The scale of the layer's sprite during the last update.
+     * @property {Phaser.Point}
+     */
+    this._lastScale = new Phaser.Point(this.scale.x, this.scale.y);
+
+    /**
      * The position offset of the layer's tiles.
      * @property {Phaser.Point}
      */
@@ -305,6 +311,8 @@ Phaser.TilemapLayer.prototype.postUpdate = function () {
     {
         this.position.x = (this.game.camera.view.x + this.cameraOffset.x) / this.game.camera.scale.x;
         this.position.y = (this.game.camera.view.y + this.cameraOffset.y) / this.game.camera.scale.y;
+        this.scale.x = 1.0 / this.game.camera.scale.x;
+        this.scale.y = 1.0 / this.game.camera.scale.y;
         this.scrollFactorX = 1.0 / this.game.camera.scale.x;
         this.scrollFactorY = 1.0 / this.game.camera.scale.y;
         this.tileScale.x = this.game.camera.scale.x;
@@ -329,6 +337,8 @@ Phaser.TilemapLayer.prototype._renderCanvas = function (renderSession) {
     {
         this.position.x = (this.game.camera.view.x + this.cameraOffset.x) / this.game.camera.scale.x;
         this.position.y = (this.game.camera.view.y + this.cameraOffset.y) / this.game.camera.scale.y;
+        this.scale.x = 1.0 / this.game.camera.scale.x;
+        this.scale.y = 1.0 / this.game.camera.scale.y;
         this.scrollFactorX = 1.0 / this.game.camera.scale.x;
         this.scrollFactorY = 1.0 / this.game.camera.scale.y;
         this.tileScale.x = this.game.camera.scale.x;
@@ -357,6 +367,8 @@ Phaser.TilemapLayer.prototype._renderWebGL = function (renderSession) {
     {
         this.position.x = (this.game.camera.view.x + this.cameraOffset.x) / this.game.camera.scale.x;
         this.position.y = (this.game.camera.view.y + this.cameraOffset.y) / this.game.camera.scale.y;
+        this.scale.x = 1.0 / this.game.camera.scale.x;
+        this.scale.y = 1.0 / this.game.camera.scale.y;
         this.scrollFactorX = 1.0 / this.game.camera.scale.x;
         this.scrollFactorY = 1.0 / this.game.camera.scale.y;
         this.tileScale.x = this.game.camera.scale.x;
@@ -1107,6 +1119,14 @@ Phaser.TilemapLayer.prototype.render = function () {
         return;
     }
 
+    // For now, redraw the whole map if the scale changes (this can be improved)
+    if (this.scale.x !== this._lastScale.x || this.scale.y !== this._lastScale.y)
+    {
+        this.dirty = true;
+    }
+
+    this._lastScale.copyFrom(this.scale);
+
     if (this.dirty || this.layer.dirty)
     {
         this.layer.dirty = false;
@@ -1203,6 +1223,8 @@ Phaser.TilemapLayer.prototype.renderDebug = function () {
     var height = this.layer.height;
     var tw = this._mc.tileWidth * this.tileScale.x;
     var th = this._mc.tileHeight * this.tileScale.y;
+    var cw = this._mc.cw * this.tileScale.x;
+    var ch = this._mc.ch * this.tileScale.y;
 
     var left = Math.floor(scrollX / tw);
     var right = Math.floor((renderW - 1 + scrollX) / tw);
@@ -1244,7 +1266,7 @@ Phaser.TilemapLayer.prototype.renderDebug = function () {
             if (this.debugSettings.collidingTileOverfill)
             {
                 context.fillStyle = this.debugSettings.collidingTileOverfill;
-                context.fillRect(tx, ty, this._mc.cw, this._mc.ch);
+                context.fillRect(tx, ty, cw, ch);
             }
 
             if (this.debugSettings.facingEdgeStroke)
@@ -1254,25 +1276,25 @@ Phaser.TilemapLayer.prototype.renderDebug = function () {
                 if (tile.faceTop)
                 {
                     context.moveTo(tx, ty);
-                    context.lineTo(tx + this._mc.cw, ty);
+                    context.lineTo(tx + cw, ty);
                 }
 
                 if (tile.faceBottom)
                 {
-                    context.moveTo(tx, ty + this._mc.ch);
-                    context.lineTo(tx + this._mc.cw, ty + this._mc.ch);
+                    context.moveTo(tx, ty + ch);
+                    context.lineTo(tx + cw, ty + ch);
                 }
 
                 if (tile.faceLeft)
                 {
                     context.moveTo(tx, ty);
-                    context.lineTo(tx, ty + this._mc.ch);
+                    context.lineTo(tx, ty + ch);
                 }
 
                 if (tile.faceRight)
                 {
-                    context.moveTo(tx + this._mc.cw, ty);
-                    context.lineTo(tx + this._mc.cw, ty + this._mc.ch);
+                    context.moveTo(tx + cw, ty);
+                    context.lineTo(tx + cw, ty + ch);
                 }
 
                 context.closePath();
