@@ -222,16 +222,16 @@ Phaser.TilemapLayer = function (game, tilemap, index, width, height) {
     this._scrollY = 0;
 
     /**
+     * The position offset of the layer's tiles.
+     * @property {Phaser.Point}
+     */
+    this.tileOffset = new Phaser.Point(this.layer.offsetX || 0, this.layer.offsetY || 0);
+
+    /**
      * The scale of the layer's tiles.
      * @property {Phaser.Point}
      */
     this.tileScale = new Phaser.Point(1, 1);
-
-    /**
-     * The scrolling offset of the layer's tiles.
-     * @property {number}
-     */
-    this.tileOffset = new Phaser.Point(this.layer.offsetX || 0, this.layer.offsetY || 0);
 
     /**
     * Used for caching the tiles / array of tiles.
@@ -438,7 +438,7 @@ Phaser.TilemapLayer.prototype.resizeWorld = function () {
 /**
  * Get the X axis position offset of this layer's tiles.
  *
- * @method Phaser.TilemapLayer#getLayerOffsetX
+ * @method Phaser.TilemapLayer#getTileOffsetX
  * @public
  * @return {number}
  */
@@ -451,7 +451,7 @@ Phaser.TilemapLayer.prototype.getTileOffsetX = function () {
 /**
  * Get the Y axis position offset of this layer's tiles.
  *
- * @method Phaser.TilemapLayer#getLayerOffsetY
+ * @method Phaser.TilemapLayer#getTileOffsetY
  * @public
  * @return {number}
  */
