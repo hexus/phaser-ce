@@ -626,4 +626,3 @@ Object.defineProperty(PIXI.DisplayObjectContainer.prototype, 'height', {
     }
 
 });
-

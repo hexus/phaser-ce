@@ -89,7 +89,7 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     /**
     * @property {Phaser.Point} scale - The scale of the display object to which all game objects are added. Set by World.boot.
     */
-    this.scale = null;
+    this._scale = null;
 
     /**
     * @property {number} totalInView - The total number of Sprites with `autoCull` set to `true` that are visible by this Camera.
@@ -133,6 +133,13 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     * @protected
     */
     this.fx = null;
+
+    /**
+     * The 2D transform matrix used to render display objects with this camera.
+     * @property {Phaser.Matrix} matrix
+     * @protected
+     */
+    this.transform = new Phaser.Matrix();
 
     /**
     * @property {Phaser.Point} _targetPosition - Internal point used to calculate target position.
@@ -191,7 +198,6 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     * @private
     */
     this._fxType = 0;
-
 };
 
 /**
@@ -252,9 +258,10 @@ Phaser.Camera.prototype = {
     */
     boot: function () {
 
-        this.displayObject = this.game.world;
+        //this.displayObject = this.game.world;
 
-        this.scale = this.game.world.scale;
+        //this.scale = this.game.world.scale;
+        this._scale = new Phaser.Point(1, 1);
 
         this.game.camera = this;
 
@@ -531,8 +538,9 @@ Phaser.Camera.prototype = {
             this._shake.y = Math.floor(this._shake.y);
         }
 
-        this.displayObject.position.x = -this.view.x;
-        this.displayObject.position.y = -this.view.y;
+        this.updateTransform();
+        //this.displayObject.position.x = -this.view.x;
+        //this.displayObject.position.y = -this.view.y;
 
     },
 
@@ -609,12 +617,13 @@ Phaser.Camera.prototype = {
      * @private
      */
     fixScale: function () {
-
+        return;
+        
         // Unscale the last position and apply the new scale using the centre
         // of the view as the pivot
         if (this._lastScale.x !== this.scale.x || this._lastScale.y !== this.scale.y) {
-            this.view.x = ((this._lastPosition.x + this.view.halfWidth) / this._lastScale.x * this.scale.x) - this.view.halfWidth;
-            this.view.y = ((this._lastPosition.y + this.view.halfHeight) / this._lastScale.y * this.scale.y) - this.view.halfHeight;
+            this.view.x = ((this._lastPosition.x + this.view.halfWidth * this._lastScale.x) / this._lastScale.x * this.scale.x) - this.view.halfWidth * this.scale.x;
+            this.view.y = ((this._lastPosition.y + this.view.halfHeight * this._lastScale.y) / this._lastScale.y * this.scale.y) - this.view.halfHeight * this.scale.y;
         }
 
         // Store the current position and scale for the next update loop
@@ -631,8 +640,10 @@ Phaser.Camera.prototype = {
     */
     updateTarget: function () {
 
-        this._targetPosition.x = this.view.x + this.target.worldPosition.x;
-        this._targetPosition.y = this.view.y + this.target.worldPosition.y;
+        //this._targetPosition.x = this.view.x + this.target.position.x;
+        //this._targetPosition.y = this.view.y + this.target.position.y;
+        this._targetPosition.x = this.target.position.x;
+        this._targetPosition.y = this.target.position.y;
 
         if (this.deadzone)
         {
@@ -676,9 +687,22 @@ Phaser.Camera.prototype = {
 
         this._lastPosition.copyFrom(this.position);
 
-        this.displayObject.position.x = -this.view.x;
-        this.displayObject.position.y = -this.view.y;
+        this.updateTransform();
+        //this.displayObject.position.x = -this.view.x * this.scale.x;
+        //this.displayObject.position.y = -this.view.y * this.scale.y;
 
+    },
+
+    /**
+     * Update the matrix to match the camera view.
+     *
+     * @method Phaser.Camera#udpateMatrix
+     */
+    updateTransform: function () {
+        this.transform.a = this.scale.x;
+        this.transform.d = this.scale.y;
+        this.transform.tx = -this.view.x;
+        this.transform.ty = -this.view.y;
     },
 
     /**
@@ -890,7 +914,7 @@ Object.defineProperty(Phaser.Camera.prototype, "y", {
 });
 
 /**
-* The Cameras position. This value is automatically clamped if it falls outside of the World bounds.
+* The Camera's position. This value is automatically clamped if it falls outside of the World bounds.
 * @name Phaser.Camera#position
 * @property {Phaser.Point} position - Gets or sets the cameras xy position using Phaser.Point object.
 */
@@ -908,6 +932,32 @@ Object.defineProperty(Phaser.Camera.prototype, "position", {
 
         if (typeof value.x !== "undefined") { this.view.x = value.x; }
         if (typeof value.y !== "undefined") { this.view.y = value.y; }
+
+        if (this.bounds)
+        {
+            this.checkBounds();
+        }
+    }
+
+});
+
+/**
+* The Camera's scale.
+* @name Phaser.Camera#scale
+* @property {Phaser.Point} scale - Gets or sets the cameras scale  position using Phaser.Point object.
+*/
+Object.defineProperty(Phaser.Camera.prototype, "scale", {
+
+    get: function () {
+
+        return this._scale;
+
+    },
+
+    set: function (value) {
+
+        if (typeof value.x !== "undefined") { this._scale.x = value.x; }
+        if (typeof value.y !== "undefined") { this._scale.y = value.y; }
 
         if (this.bounds)
         {

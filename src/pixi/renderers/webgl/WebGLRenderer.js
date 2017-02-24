@@ -389,6 +389,7 @@ PIXI.WebGLRenderer.prototype.render = function(stage)
  * @param displayObject {DisplayObject} The DisplayObject to render
  * @param projection {Point} The projection
  * @param buffer {Array} a standard WebGL buffer
+ * @param matrix {Matrix} The 2D transform matrix
  */
 PIXI.WebGLRenderer.prototype.renderDisplayObject = function(displayObject, projection, buffer, matrix)
 {

@@ -360,7 +360,7 @@ Phaser.RenderTexture.prototype._renderCanvas = function (displayObject, matrix, 
         wt.append(matrix);
     }
 
-    // Time to update all the children of the displayObject with the new matrix (what new matrix? there isn't one!)
+    // Time to update all the children of the displayObject with their parent's new matrix
     for (var i = 0; i < displayObject.children.length; i++)
     {
         displayObject.children[i].updateTransform();

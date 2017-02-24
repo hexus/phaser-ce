@@ -91,6 +91,32 @@ Phaser.World.prototype.stateChange = function () {
 
 };
 
+/*
+ * Updates the transform of the world on all children of this world.
+ *
+ * @method Phaser.World#updateTransform
+ * @private
+ */
+Phaser.World.prototype.updateTransform = function () {
+
+    if (!this.visible)
+    {
+        return;
+    }
+
+    //this.displayObjectUpdateTransform();
+    this.worldTransform.copyFrom(this.camera.transform);
+
+    for (var i = 0; i < this.children.length; i++)
+    {
+        this.children[i].updateTransform();
+    }
+
+};
+
+// Performance increase to avoid using call()
+//Phaser.World.prototype.displayObjectContainerUpdateTransform = PIXI.DisplayObjectContainer.prototype.updateTransform;
+
 /**
 * Updates the size of this world and sets World.x/y to the given values
 * The Camera bounds and Physics bounds (if set) are also updated to match the new World bounds.
