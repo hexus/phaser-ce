@@ -533,8 +533,6 @@ Phaser.Camera.prototype = {
             this.updateShake();
         }
 
-        this.fixScale();
-
         if (this.bounds)
         {
             this.checkBounds();
@@ -548,8 +546,6 @@ Phaser.Camera.prototype = {
         }
 
         this.updateTransform();
-        //this.displayObject.position.x = -this.view.x;
-        //this.displayObject.position.y = -this.view.y;
 
     },
 
@@ -620,28 +616,6 @@ Phaser.Camera.prototype = {
     },
 
     /**
-     * Keep the camera centred correctly when its scale changes.
-     *
-     * @method Phaser.Camera#fixScale
-     * @private
-     */
-    fixScale: function () {
-        return;
-        
-        // Unscale the last position and apply the new scale using the centre
-        // of the view as the pivot
-        if (this._lastScale.x !== this.scale.x || this._lastScale.y !== this.scale.y) {
-            this.view.x = ((this._lastPosition.x + this.view.halfWidth * this._lastScale.x) / this._lastScale.x * this.scale.x) - this.view.halfWidth * this.scale.x;
-            this.view.y = ((this._lastPosition.y + this.view.halfHeight * this._lastScale.y) / this._lastScale.y * this.scale.y) - this.view.halfHeight * this.scale.y;
-        }
-
-        // Store the current position and scale for the next update loop
-        this._lastPosition.copyFrom(this.position);
-        this._lastScale.copyFrom(this.scale);
-
-    },
-
-    /**
     * Internal method that handles tracking a sprite.
     *
     * @method Phaser.Camera#updateTarget
@@ -649,8 +623,6 @@ Phaser.Camera.prototype = {
     */
     updateTarget: function () {
 
-        //this._targetPosition.x = this.view.x + this.target.position.x;
-        //this._targetPosition.y = this.view.y + this.target.position.y;
         this._targetPosition.x = this.target.position.x;
         this._targetPosition.y = this.target.position.y;
 
@@ -697,8 +669,6 @@ Phaser.Camera.prototype = {
         this._lastPosition.copyFrom(this.position);
 
         this.updateTransform();
-        //this.displayObject.position.x = -this.view.x * this.scale.x;
-        //this.displayObject.position.y = -this.view.y * this.scale.y;
 
     },
 
@@ -712,6 +682,7 @@ Phaser.Camera.prototype = {
         var anchorX = this.view.width * this.anchor.x;
         var anchorY = this.view.height * this.anchor.y;
 
+        // Start with a fresh matrix
         this.transform.identity();
 
         // Scale the identity matrix around the anchor
@@ -726,8 +697,8 @@ Phaser.Camera.prototype = {
         // Apply the camera's scroll position
         this.transform.tx -= this.view.x * this.scale.x;
         this.transform.ty -= this.view.y * this.scale.y;
-        
-        // Rotate the translated matrix
+
+        // Rotate the translated matrix around the anchor
         this.transform.tx -= anchorX;
         this.transform.ty -= anchorY;
         this.transform.rotate(this.rotation);

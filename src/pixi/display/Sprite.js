@@ -192,8 +192,15 @@ PIXI.Sprite.prototype.setTexture = function(texture, destroyBase)
 PIXI.Sprite.prototype.onTextureUpdate = function()
 {
     // so if _width is 0 then width was not set..
-    if (this._width) this.scale.x = this._width / this.texture.frame.width;
-    if (this._height) this.scale.y = this._height / this.texture.frame.height;
+    if (this._width)
+    {
+        this.scale.x = this._width / this.texture.frame.width;
+    }
+
+    if (this._height)
+    {
+        this.scale.y = this._height / this.texture.frame.height;
+    }
 };
 
 /**
@@ -353,7 +360,10 @@ PIXI.Sprite.prototype.getLocalBounds = function () {
 PIXI.Sprite.prototype._renderWebGL = function(renderSession, matrix)
 {
     // if the sprite is not visible or the alpha is 0 then no need to render this element
-    if (!this.visible || this.alpha <= 0 || !this.renderable) return;
+    if (!this.visible || this.alpha <= 0 || !this.renderable)
+    {
+        return;
+    }
 
     //  They provided an alternative rendering matrix, so use it
     var wt = this.worldTransform;
@@ -394,8 +404,15 @@ PIXI.Sprite.prototype._renderWebGL = function(renderSession, matrix)
         // time to stop the sprite batch as either a mask element or a filter draw will happen next
         spriteBatch.stop();
 
-        if (this._mask) renderSession.maskManager.popMask(this._mask, renderSession);
-        if (this._filters) renderSession.filterManager.popFilter();
+        if (this._mask)
+        {
+            renderSession.maskManager.popMask(this._mask, renderSession);
+        }
+
+        if (this._filters)
+        {
+            renderSession.filterManager.popFilter();
+        }
 
         spriteBatch.start();
     }

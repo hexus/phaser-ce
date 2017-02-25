@@ -309,18 +309,19 @@ Phaser.TilemapLayer.prototype.postUpdate = function () {
 
     if (this.fixedToCamera)
     {
-        this.position.x = (this.game.camera.view.x + this.cameraOffset.x) / this.game.camera.scale.x;
-        this.position.y = (this.game.camera.view.y + this.cameraOffset.y) / this.game.camera.scale.y;
+        this.position.x = (-this.game.camera.transform.tx + this.cameraOffset.x) / this.game.camera.scale.x;
+        this.position.y = (-this.game.camera.transform.ty + this.cameraOffset.y) / this.game.camera.scale.y;
         this.scale.x = 1.0 / this.game.camera.scale.x;
         this.scale.y = 1.0 / this.game.camera.scale.y;
+        //this.rotation = this.game.camera.rotation;
         this.scrollFactorX = 1.0 / this.game.camera.scale.x;
         this.scrollFactorY = 1.0 / this.game.camera.scale.y;
         this.tileScale.x = this.game.camera.scale.x;
         this.tileScale.y = this.game.camera.scale.y;
     }
-
-    this._scrollX = (this.game.camera.view.x - this.tileOffset.x) * this.scrollFactorX / this.scale.x;
-    this._scrollY = (this.game.camera.view.y - this.tileOffset.y) * this.scrollFactorY / this.scale.y;
+    
+    this._scrollX = (-this.game.camera.transform.tx - this.tileOffset.x) * this.scrollFactorX / this.scale.x;
+    this._scrollY = (-this.game.camera.transform.ty - this.tileOffset.y) * this.scrollFactorY / this.scale.y;
 
 };
 
@@ -332,21 +333,6 @@ Phaser.TilemapLayer.prototype.postUpdate = function () {
 * @private
 */
 Phaser.TilemapLayer.prototype._renderCanvas = function (renderSession) {
-
-    if (this.fixedToCamera)
-    {
-        this.position.x = (this.game.camera.view.x + this.cameraOffset.x) / this.game.camera.scale.x;
-        this.position.y = (this.game.camera.view.y + this.cameraOffset.y) / this.game.camera.scale.y;
-        this.scale.x = 1.0 / this.game.camera.scale.x;
-        this.scale.y = 1.0 / this.game.camera.scale.y;
-        this.scrollFactorX = 1.0 / this.game.camera.scale.x;
-        this.scrollFactorY = 1.0 / this.game.camera.scale.y;
-        this.tileScale.x = this.game.camera.scale.x;
-        this.tileScale.y = this.game.camera.scale.y;
-    }
-
-    this._scrollX = (this.game.camera.view.x - this.tileOffset.x) * this.scrollFactorX / this.scale.x;
-    this._scrollY = (this.game.camera.view.y - this.tileOffset.y) * this.scrollFactorY / this.scale.y;
 
     this.render();
 
@@ -362,21 +348,6 @@ Phaser.TilemapLayer.prototype._renderCanvas = function (renderSession) {
 * @private
 */
 Phaser.TilemapLayer.prototype._renderWebGL = function (renderSession) {
-
-    if (this.fixedToCamera)
-    {
-        this.position.x = (this.game.camera.view.x + this.cameraOffset.x) / this.game.camera.scale.x;
-        this.position.y = (this.game.camera.view.y + this.cameraOffset.y) / this.game.camera.scale.y;
-        this.scale.x = 1.0 / this.game.camera.scale.x;
-        this.scale.y = 1.0 / this.game.camera.scale.y;
-        this.scrollFactorX = 1.0 / this.game.camera.scale.x;
-        this.scrollFactorY = 1.0 / this.game.camera.scale.y;
-        this.tileScale.x = this.game.camera.scale.x;
-        this.tileScale.y = this.game.camera.scale.y;
-    }
-    
-    this._scrollX = (this.game.camera.view.x - this.tileOffset.x) * this.scrollFactorX / this.scale.x;
-    this._scrollY = (this.game.camera.view.y - this.tileOffset.y) * this.scrollFactorY / this.scale.y;
 
     this.render();
 
@@ -683,11 +654,11 @@ Phaser.TilemapLayer.prototype.getTiles = function (x, y, width, height, collides
     y = this._fixY(y);
 
     //  Convert the pixel values into tile coordinates
-    var tx = Math.floor(x / (this._mc.cw * this.tileScale.x));
-    var ty = Math.floor(y / (this._mc.ch * this.tileScale.y));
+    var tx = Math.floor(x / (this._mc.cw));
+    var ty = Math.floor(y / (this._mc.ch));
     //  Don't just use ceil(width/cw) to allow account for x/y diff within cell
-    var tw = Math.ceil((x + width) / (this._mc.cw * this.tileScale.x)) - tx;
-    var th = Math.ceil((y + height) / (this._mc.ch * this.tileScale.y)) - ty;
+    var tw = Math.ceil((x + width) / (this._mc.cw)) - tx;
+    var th = Math.ceil((y + height) / (this._mc.ch)) - ty;
 
     while (this._results.length)
     {
