@@ -87,9 +87,19 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this.displayObject = null;
 
     /**
-    * @property {Phaser.Point} scale - The scale of the display object to which all game objects are added. Set by World.boot.
+    * @property {Phaser.Point} scale - The zoom of the camera. Control the center point of the zoom with Camera.anchor.
     */
-    this._scale = null;
+    this.zoom = new Phaser.Point(1, 1);
+
+    /**
+     * @property {number} rotation - The rotation of the camera in radians. Control the center point of the rotation with Camera.anchor.
+     */
+     this.rotation = 0;
+
+    /**
+     * @property {Phaser.Point} anchor - The anchor for camera zoom and rotation. [0.5, 0.5] (center) by default.
+     */
+    this.anchor = new Phaser.Point(0.5, 0.5);
 
     /**
     * @property {number} totalInView - The total number of Sprites with `autoCull` set to `true` that are visible by this Camera.
@@ -261,7 +271,6 @@ Phaser.Camera.prototype = {
         //this.displayObject = this.game.world;
 
         //this.scale = this.game.world.scale;
-        this._scale = new Phaser.Point(1, 1);
 
         this.game.camera = this;
 
@@ -699,10 +708,32 @@ Phaser.Camera.prototype = {
      * @method Phaser.Camera#udpateMatrix
      */
     updateTransform: function () {
-        this.transform.a = this.scale.x;
-        this.transform.d = this.scale.y;
-        this.transform.tx = -this.view.x;
-        this.transform.ty = -this.view.y;
+
+        var anchorX = this.view.width * this.anchor.x;
+        var anchorY = this.view.height * this.anchor.y;
+
+        this.transform.identity();
+
+        // Scale the identity matrix around the anchor
+        this.transform.tx = -anchorX;
+        this.transform.ty = -anchorY;
+
+        this.transform.scale(this.scale.x, this.scale.y);
+
+        this.transform.tx += anchorX;
+        this.transform.ty += anchorY;
+
+        // Apply the camera's scroll position
+        this.transform.tx -= this.view.x * this.scale.x;
+        this.transform.ty -= this.view.y * this.scale.y;
+        
+        // Rotate the translated matrix
+        this.transform.tx -= anchorX;
+        this.transform.ty -= anchorY;
+        this.transform.rotate(this.rotation);
+        this.transform.tx += anchorX;
+        this.transform.ty += anchorY;
+
     },
 
     /**
@@ -942,22 +973,22 @@ Object.defineProperty(Phaser.Camera.prototype, "position", {
 });
 
 /**
-* The Camera's scale.
+* The Camera's zoom. Backwards compatibility for older versions of Phaser.
 * @name Phaser.Camera#scale
-* @property {Phaser.Point} scale - Gets or sets the cameras scale  position using Phaser.Point object.
+* @property {Phaser.Point} scale - Gets or sets the cameras scale position using Phaser.Point object.
 */
 Object.defineProperty(Phaser.Camera.prototype, "scale", {
 
     get: function () {
 
-        return this._scale;
+        return this.zoom;
 
     },
 
     set: function (value) {
 
-        if (typeof value.x !== "undefined") { this._scale.x = value.x; }
-        if (typeof value.y !== "undefined") { this._scale.y = value.y; }
+        if (typeof value.x !== "undefined") { this.zoom.x = value.x; }
+        if (typeof value.y !== "undefined") { this.zoom.y = value.y; }
 
         if (this.bounds)
         {
