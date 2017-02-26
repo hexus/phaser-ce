@@ -300,7 +300,8 @@ Phaser.TilemapLayer.prototype.preUpdate = function() {
 };
 
 /**
-* Automatically called by World.postUpdate. Handles cache updates.
+* Automatically called by World.postUpdate. Handles cache and fixedToCamera
+* updates.
 *
 * @method Phaser.TilemapLayer#postUpdate
 * @protected
@@ -309,11 +310,13 @@ Phaser.TilemapLayer.prototype.postUpdate = function () {
 
     if (this.fixedToCamera)
     {
-        this.position.x = (-this.game.camera.transform.tx + this.cameraOffset.x) / this.game.camera.scale.x;
-        this.position.y = (-this.game.camera.transform.ty + this.cameraOffset.y) / this.game.camera.scale.y;
+        // this.anchor.x = this.game.camera.anchor.x;
+        // this.anchor.y = this.game.camera.anchor.y;
         this.scale.x = 1.0 / this.game.camera.scale.x;
         this.scale.y = 1.0 / this.game.camera.scale.y;
-        //this.rotation = this.game.camera.rotation;
+        this.position.x = (-this.game.camera.transform.tx + this.cameraOffset.x /*+ (this.width * this.anchor.x * this.game.camera.scale.x)*/) / this.game.camera.scale.x;
+        this.position.y = (-this.game.camera.transform.ty + this.cameraOffset.y /*+ (this.height * this.anchor.y * this.game.camera.scale.y)*/) / this.game.camera.scale.y;
+        // this.rotation = this.game.camera.rotation;
         this.scrollFactorX = 1.0 / this.game.camera.scale.x;
         this.scrollFactorY = 1.0 / this.game.camera.scale.y;
         this.tileScale.x = this.game.camera.scale.x;
@@ -543,7 +546,8 @@ Phaser.TilemapLayer.prototype._unfixY = function (y) {
 Phaser.TilemapLayer.prototype.getTileX = function (x) {
 
     // var tileWidth = this.tileWidth * this.scale.x;
-    return Math.floor(this._fixX(x) / this._mc.tileWidth);
+    //return Math.floor(this._fixX(x) / this._mc.tileWidth);
+    return Math.floor(x / this._mc.tileWidth);
 
 };
 
@@ -558,7 +562,8 @@ Phaser.TilemapLayer.prototype.getTileX = function (x) {
 Phaser.TilemapLayer.prototype.getTileY = function (y) {
 
     // var tileHeight = this.tileHeight * this.scale.y;
-    return Math.floor(this._fixY(y) / this._mc.tileHeight);
+    //return Math.floor(this._fixY(y) / this._mc.tileHeight);
+    return Math.floor(y / this._mc.tileHeight);
 
 };
 
@@ -650,8 +655,8 @@ Phaser.TilemapLayer.prototype.getTiles = function (x, y, width, height, collides
     var fetchAll = !(collides || interestingFace);
 
     //  Adjust the x,y coordinates for scrollFactor
-    x = this._fixX(x);
-    y = this._fixY(y);
+    //x = this._fixX(x);
+    //y = this._fixY(y);
 
     //  Convert the pixel values into tile coordinates
     var tx = Math.floor(x / (this._mc.cw));
@@ -660,11 +665,13 @@ Phaser.TilemapLayer.prototype.getTiles = function (x, y, width, height, collides
     var tw = Math.ceil((x + width) / (this._mc.cw)) - tx;
     var th = Math.ceil((y + height) / (this._mc.ch)) - ty;
 
+    // Clear the last set of results
     while (this._results.length)
     {
         this._results.pop();
     }
 
+    // Populate the results
     for (var wy = ty; wy < ty + th; wy++)
     {
         for (var wx = tx; wx < tx + tw; wx++)
@@ -1090,7 +1097,7 @@ Phaser.TilemapLayer.prototype.render = function () {
         return;
     }
 
-    // For now, redraw the whole map if the scale changes (this can be improved)
+    // For now, redraw the whole map if the scale changes (this can and should be improved)
     if (this.scale.x !== this._lastScale.x || this.scale.y !== this._lastScale.y)
     {
         this.dirty = true;

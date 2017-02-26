@@ -87,14 +87,14 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this.displayObject = null;
 
     /**
-    * @property {Phaser.Point} scale - The zoom of the camera. Control the center point of the zoom with Camera.anchor.
+    * @property {Phaser.Point} zoom - The zoom of the camera. Control the center point of the zoom with Camera.anchor.
     */
     this.zoom = new Phaser.Point(1, 1);
 
     /**
      * @property {number} rotation - The rotation of the camera in radians. Control the center point of the rotation with Camera.anchor.
      */
-     this.rotation = 0;
+    this.rotation = 0;
 
     /**
      * @property {Phaser.Point} anchor - The anchor for camera zoom and rotation. [0.5, 0.5] (center) by default.
@@ -170,18 +170,6 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     * @default
     */
     this._position = new Phaser.Point();
-
-    /**
-     * @property {Phaser.Point} _lastPosition
-     * @private
-     */
-    this._lastPosition = new Phaser.Point();
-
-    /**
-     * @property {Phaser.Point} _lastScale
-     * @private
-     */
-    this._lastScale = new Phaser.Point();
 
     /**
     * @property {Object} _shake - The shake effect container.
@@ -666,8 +654,6 @@ Phaser.Camera.prototype = {
             this.view.floor();
         }
 
-        this._lastPosition.copyFrom(this.position);
-
         this.updateTransform();
 
     },
@@ -688,22 +674,20 @@ Phaser.Camera.prototype = {
         // Scale the identity matrix around the anchor
         this.transform.tx = -anchorX;
         this.transform.ty = -anchorY;
-
         this.transform.scale(this.scale.x, this.scale.y);
-
         this.transform.tx += anchorX;
         this.transform.ty += anchorY;
 
         // Apply the camera's scroll position
-        this.transform.tx -= this.view.x * this.scale.x;
-        this.transform.ty -= this.view.y * this.scale.y;
+        this.transform.tx -= (this.view.x - this._shake.x) * this.scale.x;
+        this.transform.ty -= (this.view.y - this._shake.y) * this.scale.y;
 
         // Rotate the translated matrix around the anchor
-        this.transform.tx -= anchorX;
-        this.transform.ty -= anchorY;
-        this.transform.rotate(this.rotation);
-        this.transform.tx += anchorX;
-        this.transform.ty += anchorY;
+        // this.transform.tx -= anchorX;
+        // this.transform.ty -= anchorY;
+        // this.transform.rotate(this.rotation);
+        // this.transform.tx += anchorX;
+        // this.transform.ty += anchorY;
 
     },
 
@@ -1010,7 +994,6 @@ Object.defineProperty(Phaser.Camera.prototype, "height", {
     }
 
 });
-
 
 /**
 * The Cameras shake intensity.

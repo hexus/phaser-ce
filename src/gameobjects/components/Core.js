@@ -107,7 +107,7 @@ Phaser.Component.Core.preUpdate = function () {
         return false;
     }
 
-    this.world.setTo(this.game.camera.x + this.worldTransform.tx, this.game.camera.y + this.worldTransform.ty);
+    this.world.setTo(this.x, this.y);
 
     if (this.visible)
     {

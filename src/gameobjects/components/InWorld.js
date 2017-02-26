@@ -79,7 +79,7 @@ Phaser.Component.InWorld.preUpdate = function () {
 Phaser.Component.InWorld.prototype = {
 
     /**
-    * If this is set to `true` the Game Object checks if it is within the World bounds each frame. 
+    * If this is set to `true` the Game Object checks if it is within the World bounds each frame.
     * 
     * When it is no longer intersecting the world bounds it dispatches the `onOutOfBounds` event.
     * 
