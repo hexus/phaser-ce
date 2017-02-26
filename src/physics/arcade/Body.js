@@ -1450,7 +1450,7 @@ Phaser.Physics.Arcade.Body.render = function (context, body, color, filled) {
     context.fillStyle = color;
     context.strokeStyle = color;
 
-    context.save();
+    //context.save();
 
     context.setTransform(
         cameraTransform.a,
@@ -1487,7 +1487,7 @@ Phaser.Physics.Arcade.Body.render = function (context, body, color, filled) {
         }
     }
 
-    context.restore();
+    //context.restore();
 
 };
 

@@ -311,7 +311,7 @@ Phaser.TilemapLayer.prototype.preUpdate = function() {
 */
 Phaser.TilemapLayer.prototype.postUpdate = function () {
 
-    var cameraTransform = this.updateCameraTransform();
+    var cameraTransform = this._updateCameraTransform();
 
     if (this.fixedToCamera)
     {
@@ -320,8 +320,8 @@ Phaser.TilemapLayer.prototype.postUpdate = function () {
         // the screen, as well as scale the tiles appropriately
         this.scale.x = 1.0 / this.game.camera.scale.x;
         this.scale.y = 1.0 / this.game.camera.scale.y;
-        this.position.x = (-cameraTransform.tx + this.cameraOffset.x) / this.game.camera.scale.x;
-        this.position.y = (-cameraTransform.ty + this.cameraOffset.y) / this.game.camera.scale.y;
+        this.position.x = -cameraTransform.tx + this.cameraOffset.x / this.game.camera.scale.x;
+        this.position.y = -cameraTransform.ty + this.cameraOffset.y / this.game.camera.scale.y;
         this.scrollFactorX = 1.0 / this.game.camera.scale.x;
         this.scrollFactorY = 1.0 / this.game.camera.scale.y;
         this.tileScale.x = this.game.camera.scale.x;
