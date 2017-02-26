@@ -198,12 +198,15 @@ Phaser.TilemapLayer = function (game, tilemap, index, width, height) {
 
         // Collision width/height (pixels)
         // What purpose do these have? Most things use tile width/height directly.
-        // This also only extends collisions right and down.       
+        // This also only extends collisions right and down.
         cw: tilemap.tileWidth,
         ch: tilemap.tileHeight,
 
         // Cached tilesets from index -> Tileset
-        tilesets: []
+        tilesets: [],
+
+        // Used to calculate the camera matrix without any rotation
+        cameraTransform: new Phaser.Matrix()
 
     };
 
@@ -308,25 +311,57 @@ Phaser.TilemapLayer.prototype.preUpdate = function() {
 */
 Phaser.TilemapLayer.prototype.postUpdate = function () {
 
+    var cameraTransform = this.updateCameraTransform();
+
     if (this.fixedToCamera)
     {
-        // this.anchor.x = this.game.camera.anchor.x;
-        // this.anchor.y = this.game.camera.anchor.y;
+        // If the layer's fixed to the camera, we want to reverse the camera
+        // transform using the layer's sprite properties so that it still fills
+        // the screen, as well as scale the tiles appropriately
         this.scale.x = 1.0 / this.game.camera.scale.x;
         this.scale.y = 1.0 / this.game.camera.scale.y;
-        this.position.x = (-this.game.camera.transform.tx + this.cameraOffset.x /*+ (this.width * this.anchor.x * this.game.camera.scale.x)*/) / this.game.camera.scale.x;
-        this.position.y = (-this.game.camera.transform.ty + this.cameraOffset.y /*+ (this.height * this.anchor.y * this.game.camera.scale.y)*/) / this.game.camera.scale.y;
-        // this.rotation = this.game.camera.rotation;
+        this.position.x = (-cameraTransform.tx + this.cameraOffset.x) / this.game.camera.scale.x;
+        this.position.y = (-cameraTransform.ty + this.cameraOffset.y) / this.game.camera.scale.y;
         this.scrollFactorX = 1.0 / this.game.camera.scale.x;
         this.scrollFactorY = 1.0 / this.game.camera.scale.y;
         this.tileScale.x = this.game.camera.scale.x;
         this.tileScale.y = this.game.camera.scale.y;
     }
-    
-    this._scrollX = (-this.game.camera.transform.tx - this.tileOffset.x) * this.scrollFactorX / this.scale.x;
-    this._scrollY = (-this.game.camera.transform.ty - this.tileOffset.y) * this.scrollFactorY / this.scale.y;
+
+    this._scrollX = (-cameraTransform.tx - this.tileOffset.x) * this.scrollFactorX / this.scale.x;
+    this._scrollY = (-cameraTransform.ty - this.tileOffset.y) * this.scrollFactorY / this.scale.y;
 
 };
+
+/**
+ * Updates the cached camera transform with its rotation undone.
+ *
+ * This ensures that the layer positioned correctly when the camera is rotated.
+ *
+ * @method Phaser.TilemapLayer#_updateCameraTransform
+ * @private
+ * @return {Phaser.Matrix} The updated camera transform
+ */
+Phaser.TilemapLayer.prototype._updateCameraTransform = function () {
+
+    var cameraTransform = this._mc.cameraTransform;
+
+    // Update the cached copy of the camera transform
+    cameraTransform.copyFrom(this.game.camera.transform);
+
+    // Undo the rotation
+    var anchorX = this.game.camera.view.width * this.game.camera.anchor.x;
+    var anchorY = this.game.camera.view.height * this.game.camera.anchor.y;
+
+    cameraTransform.tx -= anchorX;
+    cameraTransform.ty -= anchorY;
+    cameraTransform.rotate(-this.game.camera.rotation);
+    cameraTransform.tx += anchorX;
+    cameraTransform.ty += anchorY;
+
+    return this._mc.cameraTransform;
+
+}
 
 /**
 * Automatically called by the Canvas Renderer.
@@ -344,7 +379,7 @@ Phaser.TilemapLayer.prototype._renderCanvas = function (renderSession) {
 };
 
 /**
-* Automatically called by the Canvas Renderer.
+* Automatically called by the WebGL Renderer.
 * Overrides the Sprite._renderWebGL function.
 *
 * @method Phaser.TilemapLayer#_renderWebGL
@@ -363,7 +398,7 @@ Phaser.TilemapLayer.prototype._renderWebGL = function (renderSession) {
 *
 * @method Phaser.TilemapLayer#destroy
 */
-Phaser.TilemapLayer.prototype.destroy = function() {
+Phaser.TilemapLayer.prototype.destroy = function () {
 
     Phaser.CanvasPool.remove(this);
 
@@ -448,94 +483,6 @@ Phaser.TilemapLayer.prototype.getTileOffsetY = function () {
 };
 
 /**
-* Take an x coordinate that doesn't account for scrollFactorX and 'fix' it into a scrolled local space.
-*
-* @method Phaser.TilemapLayer#_fixX
-* @private
-* @param {number} x - x coordinate in camera space
-* @return {number} x coordinate in scrollFactor-adjusted dimensions
-*/
-Phaser.TilemapLayer.prototype._fixX = function (x) {
-
-    if (this.scrollFactorX === 1 || (this.scrollFactorX === 0 && this.position.x === 0))
-    {
-        return x;
-    }
-    
-    //  This executes if the scrollFactorX is 0 and the x position of the tilemap is off from standard.
-    if (this.scrollFactorX === 0 && this.position.x !== 0)
-    {
-        return x - this.position.x;
-    }
-
-    return this._scrollX + (x - (this._scrollX / this.scrollFactorX));
-
-};
-
-/**
-* Take an x coordinate that _does_ account for scrollFactorX and 'unfix' it back to camera space.
-*
-* @method Phaser.TilemapLayer#_unfixX
-* @private
-* @param {number} x - x coordinate in scrollFactor-adjusted dimensions
-* @return {number} x coordinate in camera space
-*/
-Phaser.TilemapLayer.prototype._unfixX = function (x) {
-
-    if (this.scrollFactorX === 1)
-    {
-        return x;
-    }
-
-    return (this._scrollX / this.scrollFactorX) + (x - this._scrollX);
-
-};
-
-/**
-* Take a y coordinate that doesn't account for scrollFactorY and 'fix' it into a scrolled local space.
-*
-* @method Phaser.TilemapLayer#_fixY
-* @private
-* @param {number} y - y coordinate in camera space
-* @return {number} y coordinate in scrollFactor-adjusted dimensions
-*/
-Phaser.TilemapLayer.prototype._fixY = function (y) {
-
-    if (this.scrollFactorY === 1 || (this.scrollFactorY === 0 && this.position.y === 0))
-    {
-        return y;
-    }
-    
-    //  This executes if the scrollFactorY is 0 and the y position of the tilemap is off from standard.
-    if (this.scrollFactorY === 0 && this.position.y !== 0)
-    {
-        return y - this.position.y;
-    }
-    
-    return this._scrollY + (y - (this._scrollY / this.scrollFactorY));
-
-};
-
-/**
-* Take a y coordinate that _does_ account for scrollFactorY and 'unfix' it back to camera space.
-*
-* @method Phaser.TilemapLayer#_unfixY
-* @private
-* @param {number} y - y coordinate in scrollFactor-adjusted dimensions
-* @return {number} y coordinate in camera space
-*/
-Phaser.TilemapLayer.prototype._unfixY = function (y) {
-
-    if (this.scrollFactorY === 1)
-    {
-        return y;
-    }
-
-    return (this._scrollY / this.scrollFactorY) + (y - this._scrollY);
-
-};
-
-/**
 * Convert a pixel value to a tile coordinate.
 *
 * @method Phaser.TilemapLayer#getTileX
@@ -545,8 +492,6 @@ Phaser.TilemapLayer.prototype._unfixY = function (y) {
 */
 Phaser.TilemapLayer.prototype.getTileX = function (x) {
 
-    // var tileWidth = this.tileWidth * this.scale.x;
-    //return Math.floor(this._fixX(x) / this._mc.tileWidth);
     return Math.floor(x / this._mc.tileWidth);
 
 };
@@ -561,8 +506,6 @@ Phaser.TilemapLayer.prototype.getTileX = function (x) {
 */
 Phaser.TilemapLayer.prototype.getTileY = function (y) {
 
-    // var tileHeight = this.tileHeight * this.scale.y;
-    //return Math.floor(this._fixY(y) / this._mc.tileHeight);
     return Math.floor(y / this._mc.tileHeight);
 
 };
@@ -653,10 +596,6 @@ Phaser.TilemapLayer.prototype.getTiles = function (x, y, width, height, collides
     if (interestingFace === undefined) { interestingFace = false; }
 
     var fetchAll = !(collides || interestingFace);
-
-    //  Adjust the x,y coordinates for scrollFactor
-    //x = this._fixX(x);
-    //y = this._fixY(y);
 
     //  Convert the pixel values into tile coordinates
     var tx = Math.floor(x / (this._mc.cw));

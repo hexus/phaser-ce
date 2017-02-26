@@ -1452,7 +1452,14 @@ Phaser.Physics.Arcade.Body.render = function (context, body, color, filled) {
 
     context.save();
 
-    context.setTransform(cameraTransform.a, cameraTransform.b, cameraTransform.c, cameraTransform.d, cameraTransform.tx, cameraTransform.ty);
+    context.setTransform(
+        cameraTransform.a,
+        cameraTransform.b,
+        cameraTransform.c,
+        cameraTransform.d,
+        cameraTransform.tx,
+        cameraTransform.ty
+    );
 
     if (body.isCircle)
     {

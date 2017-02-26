@@ -668,7 +668,7 @@ Phaser.Camera.prototype = {
         var anchorX = this.view.width * this.anchor.x;
         var anchorY = this.view.height * this.anchor.y;
 
-        // Start with a fresh matrix
+        // Freshen up the matrix
         this.transform.identity();
 
         // Scale the identity matrix around the anchor
@@ -683,11 +683,11 @@ Phaser.Camera.prototype = {
         this.transform.ty -= (this.view.y - this._shake.y) * this.scale.y;
 
         // Rotate the translated matrix around the anchor
-        // this.transform.tx -= anchorX;
-        // this.transform.ty -= anchorY;
-        // this.transform.rotate(this.rotation);
-        // this.transform.tx += anchorX;
-        // this.transform.ty += anchorY;
+        this.transform.tx -= anchorX;
+        this.transform.ty -= anchorY;
+        this.transform.rotate(this.rotation);
+        this.transform.tx += anchorX;
+        this.transform.ty += anchorY;
 
     },
 
