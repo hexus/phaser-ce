@@ -1445,13 +1445,19 @@ Phaser.Physics.Arcade.Body.render = function (context, body, color, filled) {
 
     color = color || 'rgba(0,255,0,0.4)';
 
+    var cameraTransform = body.game.camera.transform;
+
     context.fillStyle = color;
     context.strokeStyle = color;
+
+    context.save();
+
+    context.setTransform(cameraTransform.a, cameraTransform.b, cameraTransform.c, cameraTransform.d, cameraTransform.tx, cameraTransform.ty);
 
     if (body.isCircle)
     {
         context.beginPath();
-        context.arc(body.center.x - body.game.camera.x, body.center.y - body.game.camera.y, body.radius, 0, 2 * Math.PI);
+        context.arc(body.center.x, body.center.y, body.radius, 0, 2 * Math.PI);
 
         if (filled)
         {
@@ -1466,13 +1472,15 @@ Phaser.Physics.Arcade.Body.render = function (context, body, color, filled) {
     {
         if (filled)
         {
-            context.fillRect(body.position.x - body.game.camera.x, body.position.y - body.game.camera.y, body.width, body.height);
+            context.fillRect(body.position.x, body.position.y, body.width, body.height);
         }
         else
         {
-            context.strokeRect(body.position.x - body.game.camera.x, body.position.y - body.game.camera.y, body.width, body.height);
+            context.strokeRect(body.position.x, body.position.y, body.width, body.height);
         }
     }
+
+    context.restore();
 
 };
 
