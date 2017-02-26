@@ -87,9 +87,9 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this.displayObject = null;
 
     /**
-    * @property {Phaser.Point} zoom - The zoom of the camera. Control the center point of the zoom with Camera.anchor.
+    * @property {Phaser.Point} zoom - The scale of the camera. Control the center point of the scaling with Camera.anchor.
     */
-    this.zoom = new Phaser.Point(1, 1);
+    this.scale = new Phaser.Point(1, 1);
 
     /**
      * @property {number} rotation - The rotation of the camera in radians. Control the center point of the rotation with Camera.anchor.
@@ -97,7 +97,7 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this.rotation = 0;
 
     /**
-     * @property {Phaser.Point} anchor - The anchor for camera zoom and rotation. [0.5, 0.5] (center) by default.
+     * @property {Phaser.Point} anchor - The anchor for camera zoom and rotation. Set to 0.5,0.5 (center of the view) by default.
      */
     this.anchor = new Phaser.Point(0.5, 0.5);
 
@@ -152,6 +152,13 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this.transform = new Phaser.Matrix();
 
     /**
+     * The 2D transform matrix without any rotation applied.
+     * @property {Phaser.Matrix} _axisAlignedTransform
+     * @private
+     */
+    this._axisAlignedTransform = new Phaser.Matrix();
+
+    /**
     * @property {Phaser.Point} _targetPosition - Internal point used to calculate target position.
     * @private
     */
@@ -165,7 +172,7 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this._edge = 0;
 
     /**
-    * @property {Phaser.Point} _position - Current position of the camera in world.
+    * @property {Phaser.Point} _position - Current position of the camera in the game world.
     * @private
     * @default
     */
@@ -672,22 +679,21 @@ Phaser.Camera.prototype = {
         this.transform.identity();
 
         // Scale the identity matrix around the anchor
-        this.transform.tx = -anchorX;
-        this.transform.ty = -anchorY;
+        this.transform.translate(-anchorX, -anchorY);
         this.transform.scale(this.scale.x, this.scale.y);
-        this.transform.tx += anchorX;
-        this.transform.ty += anchorY;
+        this.transform.translate(anchorX, anchorY);
 
         // Apply the camera's scroll position
         this.transform.tx -= (this.view.x - this._shake.x) * this.scale.x;
         this.transform.ty -= (this.view.y - this._shake.y) * this.scale.y;
 
+        // Keep a copy of the axis-aligned transform
+        this._axisAlignedTransform.copyFrom(this.transform);
+
         // Rotate the translated matrix around the anchor
-        this.transform.tx -= anchorX;
-        this.transform.ty -= anchorY;
+        this.transform.translate(-anchorX, -anchorY);
         this.transform.rotate(this.rotation);
-        this.transform.tx += anchorX;
-        this.transform.ty += anchorY;
+        this.transform.translate(anchorX, anchorY);
 
     },
 
@@ -706,7 +712,7 @@ Phaser.Camera.prototype = {
     },
 
     /**
-    * Method called to ensure the camera doesn't venture outside of the game world.
+    * Method called to ensure the camera doesn't venture outside of its bounds.
     * Called automatically by Camera.update.
     *
     * @method Phaser.Camera#checkBounds
@@ -928,22 +934,22 @@ Object.defineProperty(Phaser.Camera.prototype, "position", {
 });
 
 /**
-* The Camera's zoom. Backwards compatibility for older versions of Phaser.
+* The Camera's zoom. An alias for camera scale.
 * @name Phaser.Camera#scale
 * @property {Phaser.Point} scale - Gets or sets the cameras scale position using Phaser.Point object.
 */
-Object.defineProperty(Phaser.Camera.prototype, "scale", {
+Object.defineProperty(Phaser.Camera.prototype, "zoom", {
 
     get: function () {
 
-        return this.zoom;
+        return this.scale;
 
     },
 
     set: function (value) {
 
-        if (typeof value.x !== "undefined") { this.zoom.x = value.x; }
-        if (typeof value.y !== "undefined") { this.zoom.y = value.y; }
+        if (typeof value.x !== "undefined") { this.scale.x = value.x; }
+        if (typeof value.y !== "undefined") { this.scale.y = value.y; }
 
         if (this.bounds)
         {
@@ -1011,6 +1017,22 @@ Object.defineProperty(Phaser.Camera.prototype, "shakeIntensity", {
     set: function (value) {
 
         this._shake.intensity = value;
+
+    }
+
+});
+
+/**
+ * The Camera's transform without rotation applied. Used for bounds calculations.
+ * @name Phaser.Camera#axisAlignedTransform
+ * @property {Phaser.Matrix}
+ * @readonly
+ */
+Object.defineProperty(Phaser.Camera.prototype, "axisAlignedTransform", {
+
+    get: function () {
+
+        return this._axisAlignedTransform;
 
     }
 

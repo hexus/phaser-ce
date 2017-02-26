@@ -311,7 +311,7 @@ Phaser.TilemapLayer.prototype.preUpdate = function() {
 */
 Phaser.TilemapLayer.prototype.postUpdate = function () {
 
-    var cameraTransform = this._updateCameraTransform();
+    var cameraTransform = this.game.camera.axisAlignedTransform;
 
     if (this.fixedToCamera)
     {
@@ -320,8 +320,8 @@ Phaser.TilemapLayer.prototype.postUpdate = function () {
         // the screen, as well as scale the tiles appropriately
         this.scale.x = 1.0 / this.game.camera.scale.x;
         this.scale.y = 1.0 / this.game.camera.scale.y;
-        this.position.x = -cameraTransform.tx + this.cameraOffset.x / this.game.camera.scale.x;
-        this.position.y = -cameraTransform.ty + this.cameraOffset.y / this.game.camera.scale.y;
+        this.position.x = (-cameraTransform.tx + this.cameraOffset.x) / this.game.camera.scale.x;
+        this.position.y = (-cameraTransform.ty + this.cameraOffset.y) / this.game.camera.scale.y;
         this.scrollFactorX = 1.0 / this.game.camera.scale.x;
         this.scrollFactorY = 1.0 / this.game.camera.scale.y;
         this.tileScale.x = this.game.camera.scale.x;
@@ -330,36 +330,6 @@ Phaser.TilemapLayer.prototype.postUpdate = function () {
 
     this._scrollX = (-cameraTransform.tx - this.tileOffset.x) * this.scrollFactorX / this.scale.x;
     this._scrollY = (-cameraTransform.ty - this.tileOffset.y) * this.scrollFactorY / this.scale.y;
-
-};
-
-/**
- * Updates the cached camera transform with its rotation undone.
- *
- * This ensures that the layer positioned correctly when the camera is rotated.
- *
- * @method Phaser.TilemapLayer#_updateCameraTransform
- * @private
- * @return {Phaser.Matrix} The updated camera transform
- */
-Phaser.TilemapLayer.prototype._updateCameraTransform = function () {
-
-    var cameraTransform = this._mc.cameraTransform;
-
-    // Update the cached copy of the camera transform
-    cameraTransform.copyFrom(this.game.camera.transform);
-
-    // Undo the rotation
-    var anchorX = this.game.camera.view.width * this.game.camera.anchor.x;
-    var anchorY = this.game.camera.view.height * this.game.camera.anchor.y;
-
-    cameraTransform.tx -= anchorX;
-    cameraTransform.ty -= anchorY;
-    cameraTransform.rotate(-this.game.camera.rotation);
-    cameraTransform.tx += anchorX;
-    cameraTransform.ty += anchorY;
-
-    return this._mc.cameraTransform;
 
 };
 
