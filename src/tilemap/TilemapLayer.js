@@ -203,10 +203,7 @@ Phaser.TilemapLayer = function (game, tilemap, index, width, height) {
         ch: tilemap.tileHeight,
 
         // Cached tilesets from index -> Tileset
-        tilesets: [],
-
-        // Used to calculate the camera matrix without any rotation
-        cameraTransform: new Phaser.Matrix()
+        tilesets: []
 
     };
 
@@ -315,7 +312,7 @@ Phaser.TilemapLayer.prototype.postUpdate = function () {
 
     if (this.fixedToCamera)
     {
-        // If the layer's fixed to the camera, we want to reverse the camera
+        // If the layer is fixed to the camera, we want to reverse the camera
         // transform using the layer's sprite properties so that it still fills
         // the screen, as well as scale the tiles appropriately
         this.scale.x = 1.0 / this.game.camera.scale.x;

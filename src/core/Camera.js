@@ -528,10 +528,14 @@ Phaser.Camera.prototype = {
             this.updateShake();
         }
 
+        this.updateTransform();
+
         if (this.bounds)
         {
             this.checkBounds();
         }
+
+        this.updateTransformRotation();
 
         if (this.roundPx)
         {
@@ -539,8 +543,6 @@ Phaser.Camera.prototype = {
             this._shake.x = Math.floor(this._shake.x);
             this._shake.y = Math.floor(this._shake.y);
         }
-
-        this.updateTransform();
 
     },
 
@@ -651,24 +653,28 @@ Phaser.Camera.prototype = {
             this.view.y = this.game.math.linear(this.view.y, this._targetPosition.y - this.view.halfHeight, this.lerp.y);
         }
 
+        this.updateTransform();
+
         if (this.bounds)
         {
             this.checkBounds();
         }
 
+        this.updateTransformRotation();
+
         if (this.roundPx)
         {
             this.view.floor();
+            this._shake.x = Math.floor(this._shake.x);
+            this._shake.y = Math.floor(this._shake.y);
         }
-
-        this.updateTransform();
 
     },
 
     /**
-     * Update the matrix to match the camera view.
+     * Update the camera's transform matrix.
      *
-     * @method Phaser.Camera#udpateMatrix
+     * @method Phaser.Camera#updateMatrix
      */
     updateTransform: function () {
 
@@ -690,7 +696,19 @@ Phaser.Camera.prototype = {
         // Keep a copy of the axis-aligned transform
         this._axisAlignedTransform.copyFrom(this.transform);
 
-        // Rotate the translated matrix around the anchor
+    },
+
+    /**
+     * Update the camera transform's rotation.
+     *
+     * @method Phaser.Camera#updateTransformRotation
+     */
+    updateTransformRotation: function () {
+
+        var anchorX = this.view.width * this.anchor.x;
+        var anchorY = this.view.height * this.anchor.y;
+
+        // Rotate the matrix around the anchor
         this.transform.translate(-anchorX, -anchorY);
         this.transform.rotate(this.rotation);
         this.transform.translate(anchorX, anchorY);
@@ -712,7 +730,8 @@ Phaser.Camera.prototype = {
     },
 
     /**
-    * Method called to ensure the camera doesn't venture outside of its bounds.
+    * Method called to ensure the Camera doesn't venture outside of its bounds.
+    *
     * Called automatically by Camera.update.
     *
     * @method Phaser.Camera#checkBounds
@@ -776,6 +795,90 @@ Phaser.Camera.prototype = {
                 this._shake.y = 0;
             }
         }
+
+        this.checkTransformBounds();
+
+    },
+
+    /**
+    * Method called to ensure the camera's transform doesn't venture outside of
+    * the camera bounds.
+    *
+    * Called automatically by Camera.update.
+    * 
+    * Should only be called when the transform matrix is axis-aligned.
+    *
+    * @method Phaser.Camera#checkBounds
+    * @protected
+    */
+    checkTransformBounds: function () {
+
+        this.atLimit.x = false;
+        this.atLimit.y = false;
+
+        var transform = this.transform;
+        var vw = this.view.width;
+        var vx = -transform.tx;
+        var vr = vx + vw;
+        var vh = this.view.height;
+        var vy = -transform.ty;
+        var vb = vy + vh;
+
+        this.game.debug.start(32, 300, '#fff', 200);
+        this.game.debug.line(vx, vw, vr, transform.a);
+        this.game.debug.line(vy, vh, vb, transform.d);
+        this.game.debug.stop();
+
+        //  Make sure we didn't go outside the cameras bounds
+        if (vx <= this.bounds.x * this.scale.x)
+        {
+            this.atLimit.x = true;
+            transform.tx = -this.bounds.x;
+
+            if (!this._shake.shakeBounds)
+            {
+                //  The camera is up against the bounds, so reset the shake
+                this._shake.x = 0;
+            }
+        }
+
+        if (vr >= this.bounds.right * this.scale.x)
+        {
+            this.atLimit.x = true;
+            transform.tx = -this.bounds.right * this.scale.x + vw;
+
+            if (!this._shake.shakeBounds)
+            {
+                //  The camera is up against the bounds, so reset the shake
+                this._shake.x = 0;
+            }
+        }
+
+        if (vy <= this.bounds.top * this.scale.y)
+        {
+            this.atLimit.y = true;
+            transform.ty = -this.bounds.top * this.scale.y;
+
+            if (!this._shake.shakeBounds)
+            {
+                //  The camera is up against the bounds, so reset the shake
+                this._shake.y = 0;
+            }
+        }
+
+        if (vb >= this.bounds.bottom * this.scale.y)
+        {
+            this.atLimit.y = true;
+            transform.ty = -this.bounds.bottom * this.scale.y + vh;
+
+            if (!this._shake.shakeBounds)
+            {
+                //  The camera is up against the bounds, so reset the shake
+                this._shake.y = 0;
+            }
+        }
+
+        this._axisAlignedTransform.copyFrom(this.transform);
 
     },
 
