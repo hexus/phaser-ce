@@ -361,7 +361,7 @@ Phaser.TilemapLayer.prototype._updateCameraTransform = function () {
 
     return this._mc.cameraTransform;
 
-}
+};
 
 /**
 * Automatically called by the Canvas Renderer.
