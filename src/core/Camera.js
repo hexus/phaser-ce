@@ -73,13 +73,7 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     /**
     * @property {boolean} atLimit - Whether the camera is flush with its bounds or not.
     */
-    this.atLimit = { x: false, y: false, right: false, bottom: false };
-
-    /**
-     * @property {boolean} adaptAnchor - Whether to adapt the camera anchor when camera is against the bounds.
-     * @default
-     */
-    this.adaptAnchor = true;
+    this.atLimit = { x: false, y: false, left: false, right: false, top: false, bottom: false };
 
     /**
     * @property {Phaser.Sprite} target - If the camera is tracking a Sprite, this is a reference to it, otherwise null.
@@ -732,11 +726,11 @@ Phaser.Camera.prototype = {
         this.atLimit.x = false;
         this.atLimit.y = false;
 
-        // Camera view size
+        // Camera view dimensions
         var vw = this.width / this.scale.x;
         var vh = this.height / this.scale.y;
 
-        // Anchor size
+        // Anchor dimensions
         var anchorX = vw * this.anchor.x;
         var anchorY = vh * this.anchor.y;
 
@@ -760,6 +754,8 @@ Phaser.Camera.prototype = {
         if (vl <= bl)
         {
             this.atLimit.x = true;
+            this.atLimit.left = true;
+
             this.view.x = bl;
 
             if (!this._shake.shakeBounds)
@@ -772,6 +768,8 @@ Phaser.Camera.prototype = {
         if (vr >= br)
         {
             this.atLimit.x = true;
+            this.atLimit.right = true;
+
             this.view.x = br - vw;
 
             if (!this._shake.shakeBounds)
@@ -784,6 +782,8 @@ Phaser.Camera.prototype = {
         if (vt <= bt)
         {
             this.atLimit.y = true;
+            this.atLimit.top = true;
+
             this.view.y = bt;
 
             if (!this._shake.shakeBounds)
@@ -796,6 +796,8 @@ Phaser.Camera.prototype = {
         if (vb >= bb)
         {
             this.atLimit.y = true;
+            this.atLimit.bottom = true;
+
             this.view.y = bb - vh;
 
             if (!this._shake.shakeBounds)
