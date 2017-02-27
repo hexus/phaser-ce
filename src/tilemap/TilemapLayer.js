@@ -325,8 +325,8 @@ Phaser.TilemapLayer.prototype.postUpdate = function () {
         this.tileScale.y = this.game.camera.scale.y;
     }
 
-    this._scrollX = (-cameraTransform.tx - this.tileOffset.x) * this.scrollFactorX / this.scale.x;
-    this._scrollY = (-cameraTransform.ty - this.tileOffset.y) * this.scrollFactorY / this.scale.y;
+    this._scrollX = (-cameraTransform.tx - this.tileOffset.x * this.game.camera.scale.x) * this.scrollFactorX / this.scale.x;
+    this._scrollY = (-cameraTransform.ty - this.tileOffset.y * this.game.camera.scale.y) * this.scrollFactorY / this.scale.y;
 
 };
 
