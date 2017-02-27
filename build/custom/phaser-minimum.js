@@ -7,7 +7,7 @@
 *
 * Phaser - http://phaser.io
 *
-* v2.7.3 "2017-01-09" - Built: Mon Jan 09 2017 13:26:30
+* v2.7.3 "2017-01-09" - Built: Mon Feb 27 2017 20:28:24
 *
 * By Richard Davey http://www.photonstorm.com @photonstorm
 *
@@ -1493,7 +1493,6 @@ Object.defineProperty(PIXI.DisplayObjectContainer.prototype, 'height', {
 
 });
 
-
 /**
  * @author Mat Groves http://matgroves.com/ @Doormat23
  */
@@ -1688,8 +1687,15 @@ PIXI.Sprite.prototype.setTexture = function(texture, destroyBase)
 PIXI.Sprite.prototype.onTextureUpdate = function()
 {
     // so if _width is 0 then width was not set..
-    if (this._width) this.scale.x = this._width / this.texture.frame.width;
-    if (this._height) this.scale.y = this._height / this.texture.frame.height;
+    if (this._width)
+    {
+        this.scale.x = this._width / this.texture.frame.width;
+    }
+
+    if (this._height)
+    {
+        this.scale.y = this._height / this.texture.frame.height;
+    }
 };
 
 /**
@@ -1849,7 +1855,10 @@ PIXI.Sprite.prototype.getLocalBounds = function () {
 PIXI.Sprite.prototype._renderWebGL = function(renderSession, matrix)
 {
     // if the sprite is not visible or the alpha is 0 then no need to render this element
-    if (!this.visible || this.alpha <= 0 || !this.renderable) return;
+    if (!this.visible || this.alpha <= 0 || !this.renderable)
+    {
+        return;
+    }
 
     //  They provided an alternative rendering matrix, so use it
     var wt = this.worldTransform;
@@ -1890,8 +1899,15 @@ PIXI.Sprite.prototype._renderWebGL = function(renderSession, matrix)
         // time to stop the sprite batch as either a mask element or a filter draw will happen next
         spriteBatch.stop();
 
-        if (this._mask) renderSession.maskManager.popMask(this._mask, renderSession);
-        if (this._filters) renderSession.filterManager.popFilter();
+        if (this._mask)
+        {
+            renderSession.maskManager.popMask(this._mask, renderSession);
+        }
+
+        if (this._filters)
+        {
+            renderSession.filterManager.popFilter();
+        }
 
         spriteBatch.start();
     }
@@ -3685,6 +3701,7 @@ PIXI.WebGLRenderer.prototype.render = function(stage)
  * @param displayObject {DisplayObject} The DisplayObject to render
  * @param projection {Point} The projection
  * @param buffer {Array} a standard WebGL buffer
+ * @param matrix {Matrix} The 2D transform matrix
  */
 PIXI.WebGLRenderer.prototype.renderDisplayObject = function(displayObject, projection, buffer, matrix)
 {
@@ -3940,6 +3957,7 @@ PIXI.enableMultiTexture = function() {
 
 PIXI.WebGLRenderer.glContextId = 0;
 PIXI.WebGLRenderer.textureArray = [];
+
 /**
  * @author Mat Groves http://matgroves.com/ @Doormat23
  */
@@ -13190,9 +13208,9 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this.roundPx = true;
 
     /**
-    * @property {boolean} atLimit - Whether this camera is flush with the World Bounds or not.
+    * @property {boolean} atLimit - Whether the camera is flush with its bounds or not.
     */
-    this.atLimit = { x: false, y: false };
+    this.atLimit = { x: false, y: false, left: false, right: false, top: false, bottom: false };
 
     /**
     * @property {Phaser.Sprite} target - If the camera is tracking a Sprite, this is a reference to it, otherwise null.
@@ -13206,9 +13224,19 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this.displayObject = null;
 
     /**
-    * @property {Phaser.Point} scale - The scale of the display object to which all game objects are added. Set by World.boot.
+    * @property {Phaser.Point} zoom - The scale of the camera. Control the center point of the scaling with Camera.anchor.
     */
-    this.scale = null;
+    this.scale = new Phaser.Point(1, 1);
+
+    /**
+     * @property {number} rotation - The rotation of the camera in radians. Control the center point of the rotation with Camera.anchor.
+     */
+    this.rotation = 0;
+
+    /**
+     * @property {Phaser.Point} anchor - The anchor for camera zoom and rotation. Set to 0.5,0.5 (center of the view) by default.
+     */
+    this.anchor = new Phaser.Point(0.5, 0.5);
 
     /**
     * @property {number} totalInView - The total number of Sprites with `autoCull` set to `true` that are visible by this Camera.
@@ -13254,6 +13282,20 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this.fx = null;
 
     /**
+     * The 2D transform matrix used to render display objects with this camera.
+     * @property {Phaser.Matrix} matrix
+     * @protected
+     */
+    this.transform = new Phaser.Matrix();
+
+    /**
+     * The 2D transform matrix without any rotation applied.
+     * @property {Phaser.Matrix} _axisAlignedTransform
+     * @private
+     */
+    this._axisAlignedTransform = new Phaser.Matrix();
+
+    /**
     * @property {Phaser.Point} _targetPosition - Internal point used to calculate target position.
     * @private
     */
@@ -13267,7 +13309,7 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this._edge = 0;
 
     /**
-    * @property {Phaser.Point} position - Current position of the camera in world.
+    * @property {Phaser.Point} _position - Current position of the camera in the game world.
     * @private
     * @default
     */
@@ -13298,7 +13340,6 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     * @private
     */
     this._fxType = 0;
-
 };
 
 /**
@@ -13359,9 +13400,9 @@ Phaser.Camera.prototype = {
     */
     boot: function () {
 
-        this.displayObject = this.game.world;
+        //this.displayObject = this.game.world;
 
-        this.scale = this.game.world.scale;
+        //this.scale = this.game.world.scale;
 
         this.game.camera = this;
 
@@ -13629,15 +13670,14 @@ Phaser.Camera.prototype = {
             this.checkBounds();
         }
 
+        this.updateTransform();
+
         if (this.roundPx)
         {
             this.view.floor();
             this._shake.x = Math.floor(this._shake.x);
             this._shake.y = Math.floor(this._shake.y);
         }
-
-        this.displayObject.position.x = -this.view.x;
-        this.displayObject.position.y = -this.view.y;
 
     },
 
@@ -13715,8 +13755,8 @@ Phaser.Camera.prototype = {
     */
     updateTarget: function () {
 
-        this._targetPosition.x = this.view.x + this.target.worldPosition.x;
-        this._targetPosition.y = this.view.y + this.target.worldPosition.y;
+        this._targetPosition.x = this.target.position.x;
+        this._targetPosition.y = this.target.position.y;
 
         if (this.deadzone)
         {
@@ -13753,13 +13793,46 @@ Phaser.Camera.prototype = {
             this.checkBounds();
         }
 
+        this.updateTransform();
+
         if (this.roundPx)
         {
             this.view.floor();
+            this._shake.x = Math.floor(this._shake.x);
+            this._shake.y = Math.floor(this._shake.y);
         }
 
-        this.displayObject.position.x = -this.view.x;
-        this.displayObject.position.y = -this.view.y;
+    },
+
+    /**
+     * Update the camera's transform matrix.
+     *
+     * @method Phaser.Camera#updateMatrix
+     */
+    updateTransform: function () {
+
+        var anchorX = this.view.width * this.anchor.x;
+        var anchorY = this.view.height * this.anchor.y;
+
+        // Freshen up the matrix
+        this.transform.identity();
+
+        // Scale the identity matrix around the anchor
+        this.transform.translate(-anchorX, -anchorY);
+        this.transform.scale(this.scale.x, this.scale.y);
+        this.transform.translate(anchorX, anchorY);
+
+        // Apply the camera's scroll position
+        this.transform.tx -= (this.view.x - this._shake.x) * this.scale.x;
+        this.transform.ty -= (this.view.y - this._shake.y) * this.scale.y;
+
+        // Keep a copy of the axis-aligned transform
+        this._axisAlignedTransform.copyFrom(this.transform);
+
+        // Rotate the matrix around the anchor
+        this.transform.translate(-anchorX, -anchorY);
+        this.transform.rotate(this.rotation);
+        this.transform.translate(anchorX, anchorY);
 
     },
 
@@ -13778,7 +13851,8 @@ Phaser.Camera.prototype = {
     },
 
     /**
-    * Method called to ensure the camera doesn't venture outside of the game world.
+    * Method called to ensure the Camera doesn't venture outside of its bounds.
+    *
     * Called automatically by Camera.update.
     *
     * @method Phaser.Camera#checkBounds
@@ -13789,16 +13863,37 @@ Phaser.Camera.prototype = {
         this.atLimit.x = false;
         this.atLimit.y = false;
 
-        var vx = this.view.x + this._shake.x;
-        var vw = this.view.right + this._shake.x;
-        var vy = this.view.y + this._shake.y;
-        var vh = this.view.bottom + this._shake.y;
+        // Camera view dimensions
+        var vw = this.width / this.scale.x;
+        var vh = this.height / this.scale.y;
 
-        //  Make sure we didn't go outside the cameras bounds
-        if (vx <= this.bounds.x * this.scale.x)
+        // Anchor dimensions
+        var anchorX = vw * this.anchor.x;
+        var anchorY = vh * this.anchor.y;
+
+        // Padding from the camera anchor, so the transform fits nicely
+        var paddingX = -anchorX * this.scale.x + anchorX;
+        var paddingY = -anchorY * this.scale.y + anchorY;
+
+        // Camera view
+        var vl = this.view.x + this._shake.x;
+        var vr = vl + vw + this._shake.x;
+        var vt = this.view.y + this._shake.y;
+        var vb = vt + vh + this._shake.y;
+
+        // Camera bounds with anchor padding
+        var bl = this.bounds.left + paddingX;
+        var br = this.bounds.right + paddingX;
+        var bt = this.bounds.top + paddingY;
+        var bb = this.bounds.bottom + paddingY;
+
+        //  Make sure we didn't go outside the camera's bounds
+        if (vl <= bl)
         {
             this.atLimit.x = true;
-            this.view.x = this.bounds.x * this.scale.x;
+            this.atLimit.left = true;
+
+            this.view.x = bl;
 
             if (!this._shake.shakeBounds)
             {
@@ -13807,10 +13902,12 @@ Phaser.Camera.prototype = {
             }
         }
 
-        if (vw >= this.bounds.right * this.scale.x)
+        if (vr >= br)
         {
             this.atLimit.x = true;
-            this.view.x = (this.bounds.right * this.scale.x) - this.width;
+            this.atLimit.right = true;
+
+            this.view.x = br - vw;
 
             if (!this._shake.shakeBounds)
             {
@@ -13819,10 +13916,12 @@ Phaser.Camera.prototype = {
             }
         }
 
-        if (vy <= this.bounds.top * this.scale.y)
+        if (vt <= bt)
         {
             this.atLimit.y = true;
-            this.view.y = this.bounds.top * this.scale.y;
+            this.atLimit.top = true;
+
+            this.view.y = bt;
 
             if (!this._shake.shakeBounds)
             {
@@ -13831,10 +13930,12 @@ Phaser.Camera.prototype = {
             }
         }
 
-        if (vh >= this.bounds.bottom * this.scale.y)
+        if (vb >= bb)
         {
             this.atLimit.y = true;
-            this.view.y = (this.bounds.bottom * this.scale.y) - this.height;
+            this.atLimit.bottom = true;
+
+            this.view.y = bb - vh;
 
             if (!this._shake.shakeBounds)
             {
@@ -13972,7 +14073,7 @@ Object.defineProperty(Phaser.Camera.prototype, "y", {
 });
 
 /**
-* The Cameras position. This value is automatically clamped if it falls outside of the World bounds.
+* The Camera's position. This value is automatically clamped if it falls outside of the World bounds.
 * @name Phaser.Camera#position
 * @property {Phaser.Point} position - Gets or sets the cameras xy position using Phaser.Point object.
 */
@@ -13990,6 +14091,32 @@ Object.defineProperty(Phaser.Camera.prototype, "position", {
 
         if (typeof value.x !== "undefined") { this.view.x = value.x; }
         if (typeof value.y !== "undefined") { this.view.y = value.y; }
+
+        if (this.bounds)
+        {
+            this.checkBounds();
+        }
+    }
+
+});
+
+/**
+* The Camera's zoom. An alias for camera scale.
+* @name Phaser.Camera#scale
+* @property {Phaser.Point} scale - Gets or sets the cameras scale position using Phaser.Point object.
+*/
+Object.defineProperty(Phaser.Camera.prototype, "zoom", {
+
+    get: function () {
+
+        return this.scale;
+
+    },
+
+    set: function (value) {
+
+        if (typeof value.x !== "undefined") { this.scale.x = value.x; }
+        if (typeof value.y !== "undefined") { this.scale.y = value.y; }
 
         if (this.bounds)
         {
@@ -14041,7 +14168,6 @@ Object.defineProperty(Phaser.Camera.prototype, "height", {
 
 });
 
-
 /**
 * The Cameras shake intensity.
 * @name Phaser.Camera#shakeIntensity
@@ -14058,6 +14184,22 @@ Object.defineProperty(Phaser.Camera.prototype, "shakeIntensity", {
     set: function (value) {
 
         this._shake.intensity = value;
+
+    }
+
+});
+
+/**
+ * The Camera's transform without rotation applied.
+ * @name Phaser.Camera#axisAlignedTransform
+ * @property {Phaser.Matrix}
+ * @readonly
+ */
+Object.defineProperty(Phaser.Camera.prototype, "axisAlignedTransform", {
+
+    get: function () {
+
+        return this._axisAlignedTransform;
 
     }
 
@@ -20029,6 +20171,32 @@ Phaser.World.prototype.stateChange = function () {
     this.camera.reset();
 
 };
+
+/*
+ * Updates the transform of the world on all children of this world.
+ *
+ * @method Phaser.World#updateTransform
+ * @private
+ */
+Phaser.World.prototype.updateTransform = function () {
+
+    if (!this.visible)
+    {
+        return;
+    }
+
+    //this.displayObjectUpdateTransform();
+    this.worldTransform.copyFrom(this.camera.transform);
+
+    for (var i = 0; i < this.children.length; i++)
+    {
+        this.children[i].updateTransform();
+    }
+
+};
+
+// Performance increase to avoid using call()
+//Phaser.World.prototype.displayObjectContainerUpdateTransform = PIXI.DisplayObjectContainer.prototype.updateTransform;
 
 /**
 * Updates the size of this world and sets World.x/y to the given values
@@ -28457,7 +28625,7 @@ Phaser.Component.Core.preUpdate = function () {
         return false;
     }
 
-    this.world.setTo(this.game.camera.x + this.worldTransform.tx, this.game.camera.y + this.worldTransform.ty);
+    this.world.setTo(this.x, this.y);
 
     if (this.visible)
     {
@@ -29760,7 +29928,7 @@ Phaser.Component.InWorld.preUpdate = function () {
 Phaser.Component.InWorld.prototype = {
 
     /**
-    * If this is set to `true` the Game Object checks if it is within the World bounds each frame. 
+    * If this is set to `true` the Game Object checks if it is within the World bounds each frame.
     * 
     * When it is no longer intersecting the world bounds it dispatches the `onOutOfBounds` event.
     * 
@@ -35949,6 +36117,20 @@ Phaser.Math = {
         }
 
         return { sin: sinTable, cos: cosTable, length: length };
+
+    },
+
+    /**
+    * Returns the length of the hypotenuse connecting two segments of given lengths.
+    *
+    * @method Phaser.Math#hypot
+    * @param {number} a
+    * @param {number} b
+    * @return {number} The length of the hypotenuse connecting the given lengths.
+    */
+    hypot: function (a, b) {
+
+        return Math.sqrt(a * a + b * b);
 
     },
 
@@ -45143,7 +45325,9 @@ Phaser.Loader.prototype = {
         file.data.src = this.transformUrl(file.url, file);
 
         // Image is immediately-available/cached
-        if (file.data.complete && file.data.width && file.data.height)
+        // Special Firefox magic, exclude from cached reload
+        // More info here: https://github.com/photonstorm/phaser/issues/2534
+        if (!this.game.device.firefox && file.data.complete && file.data.width && file.data.height)
         {
             file.data.onload = null;
             file.data.onerror = null;

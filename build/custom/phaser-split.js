@@ -7,7 +7,7 @@
 *
 * Phaser - http://phaser.io
 *
-* v2.7.3 "2017-01-09" - Built: Mon Jan 09 2017 13:26:34
+* v2.7.3 "2017-01-09" - Built: Mon Feb 27 2017 20:28:29
 *
 * By Richard Davey http://www.photonstorm.com @photonstorm
 *
@@ -5715,9 +5715,9 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this.roundPx = true;
 
     /**
-    * @property {boolean} atLimit - Whether this camera is flush with the World Bounds or not.
+    * @property {boolean} atLimit - Whether the camera is flush with its bounds or not.
     */
-    this.atLimit = { x: false, y: false };
+    this.atLimit = { x: false, y: false, left: false, right: false, top: false, bottom: false };
 
     /**
     * @property {Phaser.Sprite} target - If the camera is tracking a Sprite, this is a reference to it, otherwise null.
@@ -5731,9 +5731,19 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this.displayObject = null;
 
     /**
-    * @property {Phaser.Point} scale - The scale of the display object to which all game objects are added. Set by World.boot.
+    * @property {Phaser.Point} zoom - The scale of the camera. Control the center point of the scaling with Camera.anchor.
     */
-    this.scale = null;
+    this.scale = new Phaser.Point(1, 1);
+
+    /**
+     * @property {number} rotation - The rotation of the camera in radians. Control the center point of the rotation with Camera.anchor.
+     */
+    this.rotation = 0;
+
+    /**
+     * @property {Phaser.Point} anchor - The anchor for camera zoom and rotation. Set to 0.5,0.5 (center of the view) by default.
+     */
+    this.anchor = new Phaser.Point(0.5, 0.5);
 
     /**
     * @property {number} totalInView - The total number of Sprites with `autoCull` set to `true` that are visible by this Camera.
@@ -5779,6 +5789,20 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this.fx = null;
 
     /**
+     * The 2D transform matrix used to render display objects with this camera.
+     * @property {Phaser.Matrix} matrix
+     * @protected
+     */
+    this.transform = new Phaser.Matrix();
+
+    /**
+     * The 2D transform matrix without any rotation applied.
+     * @property {Phaser.Matrix} _axisAlignedTransform
+     * @private
+     */
+    this._axisAlignedTransform = new Phaser.Matrix();
+
+    /**
     * @property {Phaser.Point} _targetPosition - Internal point used to calculate target position.
     * @private
     */
@@ -5792,7 +5816,7 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this._edge = 0;
 
     /**
-    * @property {Phaser.Point} position - Current position of the camera in world.
+    * @property {Phaser.Point} _position - Current position of the camera in the game world.
     * @private
     * @default
     */
@@ -5823,7 +5847,6 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     * @private
     */
     this._fxType = 0;
-
 };
 
 /**
@@ -5884,9 +5907,9 @@ Phaser.Camera.prototype = {
     */
     boot: function () {
 
-        this.displayObject = this.game.world;
+        //this.displayObject = this.game.world;
 
-        this.scale = this.game.world.scale;
+        //this.scale = this.game.world.scale;
 
         this.game.camera = this;
 
@@ -6154,15 +6177,14 @@ Phaser.Camera.prototype = {
             this.checkBounds();
         }
 
+        this.updateTransform();
+
         if (this.roundPx)
         {
             this.view.floor();
             this._shake.x = Math.floor(this._shake.x);
             this._shake.y = Math.floor(this._shake.y);
         }
-
-        this.displayObject.position.x = -this.view.x;
-        this.displayObject.position.y = -this.view.y;
 
     },
 
@@ -6240,8 +6262,8 @@ Phaser.Camera.prototype = {
     */
     updateTarget: function () {
 
-        this._targetPosition.x = this.view.x + this.target.worldPosition.x;
-        this._targetPosition.y = this.view.y + this.target.worldPosition.y;
+        this._targetPosition.x = this.target.position.x;
+        this._targetPosition.y = this.target.position.y;
 
         if (this.deadzone)
         {
@@ -6278,13 +6300,46 @@ Phaser.Camera.prototype = {
             this.checkBounds();
         }
 
+        this.updateTransform();
+
         if (this.roundPx)
         {
             this.view.floor();
+            this._shake.x = Math.floor(this._shake.x);
+            this._shake.y = Math.floor(this._shake.y);
         }
 
-        this.displayObject.position.x = -this.view.x;
-        this.displayObject.position.y = -this.view.y;
+    },
+
+    /**
+     * Update the camera's transform matrix.
+     *
+     * @method Phaser.Camera#updateMatrix
+     */
+    updateTransform: function () {
+
+        var anchorX = this.view.width * this.anchor.x;
+        var anchorY = this.view.height * this.anchor.y;
+
+        // Freshen up the matrix
+        this.transform.identity();
+
+        // Scale the identity matrix around the anchor
+        this.transform.translate(-anchorX, -anchorY);
+        this.transform.scale(this.scale.x, this.scale.y);
+        this.transform.translate(anchorX, anchorY);
+
+        // Apply the camera's scroll position
+        this.transform.tx -= (this.view.x - this._shake.x) * this.scale.x;
+        this.transform.ty -= (this.view.y - this._shake.y) * this.scale.y;
+
+        // Keep a copy of the axis-aligned transform
+        this._axisAlignedTransform.copyFrom(this.transform);
+
+        // Rotate the matrix around the anchor
+        this.transform.translate(-anchorX, -anchorY);
+        this.transform.rotate(this.rotation);
+        this.transform.translate(anchorX, anchorY);
 
     },
 
@@ -6303,7 +6358,8 @@ Phaser.Camera.prototype = {
     },
 
     /**
-    * Method called to ensure the camera doesn't venture outside of the game world.
+    * Method called to ensure the Camera doesn't venture outside of its bounds.
+    *
     * Called automatically by Camera.update.
     *
     * @method Phaser.Camera#checkBounds
@@ -6314,16 +6370,37 @@ Phaser.Camera.prototype = {
         this.atLimit.x = false;
         this.atLimit.y = false;
 
-        var vx = this.view.x + this._shake.x;
-        var vw = this.view.right + this._shake.x;
-        var vy = this.view.y + this._shake.y;
-        var vh = this.view.bottom + this._shake.y;
+        // Camera view dimensions
+        var vw = this.width / this.scale.x;
+        var vh = this.height / this.scale.y;
 
-        //  Make sure we didn't go outside the cameras bounds
-        if (vx <= this.bounds.x * this.scale.x)
+        // Anchor dimensions
+        var anchorX = vw * this.anchor.x;
+        var anchorY = vh * this.anchor.y;
+
+        // Padding from the camera anchor, so the transform fits nicely
+        var paddingX = -anchorX * this.scale.x + anchorX;
+        var paddingY = -anchorY * this.scale.y + anchorY;
+
+        // Camera view
+        var vl = this.view.x + this._shake.x;
+        var vr = vl + vw + this._shake.x;
+        var vt = this.view.y + this._shake.y;
+        var vb = vt + vh + this._shake.y;
+
+        // Camera bounds with anchor padding
+        var bl = this.bounds.left + paddingX;
+        var br = this.bounds.right + paddingX;
+        var bt = this.bounds.top + paddingY;
+        var bb = this.bounds.bottom + paddingY;
+
+        //  Make sure we didn't go outside the camera's bounds
+        if (vl <= bl)
         {
             this.atLimit.x = true;
-            this.view.x = this.bounds.x * this.scale.x;
+            this.atLimit.left = true;
+
+            this.view.x = bl;
 
             if (!this._shake.shakeBounds)
             {
@@ -6332,10 +6409,12 @@ Phaser.Camera.prototype = {
             }
         }
 
-        if (vw >= this.bounds.right * this.scale.x)
+        if (vr >= br)
         {
             this.atLimit.x = true;
-            this.view.x = (this.bounds.right * this.scale.x) - this.width;
+            this.atLimit.right = true;
+
+            this.view.x = br - vw;
 
             if (!this._shake.shakeBounds)
             {
@@ -6344,10 +6423,12 @@ Phaser.Camera.prototype = {
             }
         }
 
-        if (vy <= this.bounds.top * this.scale.y)
+        if (vt <= bt)
         {
             this.atLimit.y = true;
-            this.view.y = this.bounds.top * this.scale.y;
+            this.atLimit.top = true;
+
+            this.view.y = bt;
 
             if (!this._shake.shakeBounds)
             {
@@ -6356,10 +6437,12 @@ Phaser.Camera.prototype = {
             }
         }
 
-        if (vh >= this.bounds.bottom * this.scale.y)
+        if (vb >= bb)
         {
             this.atLimit.y = true;
-            this.view.y = (this.bounds.bottom * this.scale.y) - this.height;
+            this.atLimit.bottom = true;
+
+            this.view.y = bb - vh;
 
             if (!this._shake.shakeBounds)
             {
@@ -6497,7 +6580,7 @@ Object.defineProperty(Phaser.Camera.prototype, "y", {
 });
 
 /**
-* The Cameras position. This value is automatically clamped if it falls outside of the World bounds.
+* The Camera's position. This value is automatically clamped if it falls outside of the World bounds.
 * @name Phaser.Camera#position
 * @property {Phaser.Point} position - Gets or sets the cameras xy position using Phaser.Point object.
 */
@@ -6515,6 +6598,32 @@ Object.defineProperty(Phaser.Camera.prototype, "position", {
 
         if (typeof value.x !== "undefined") { this.view.x = value.x; }
         if (typeof value.y !== "undefined") { this.view.y = value.y; }
+
+        if (this.bounds)
+        {
+            this.checkBounds();
+        }
+    }
+
+});
+
+/**
+* The Camera's zoom. An alias for camera scale.
+* @name Phaser.Camera#scale
+* @property {Phaser.Point} scale - Gets or sets the cameras scale position using Phaser.Point object.
+*/
+Object.defineProperty(Phaser.Camera.prototype, "zoom", {
+
+    get: function () {
+
+        return this.scale;
+
+    },
+
+    set: function (value) {
+
+        if (typeof value.x !== "undefined") { this.scale.x = value.x; }
+        if (typeof value.y !== "undefined") { this.scale.y = value.y; }
 
         if (this.bounds)
         {
@@ -6566,7 +6675,6 @@ Object.defineProperty(Phaser.Camera.prototype, "height", {
 
 });
 
-
 /**
 * The Cameras shake intensity.
 * @name Phaser.Camera#shakeIntensity
@@ -6583,6 +6691,22 @@ Object.defineProperty(Phaser.Camera.prototype, "shakeIntensity", {
     set: function (value) {
 
         this._shake.intensity = value;
+
+    }
+
+});
+
+/**
+ * The Camera's transform without rotation applied.
+ * @name Phaser.Camera#axisAlignedTransform
+ * @property {Phaser.Matrix}
+ * @readonly
+ */
+Object.defineProperty(Phaser.Camera.prototype, "axisAlignedTransform", {
+
+    get: function () {
+
+        return this._axisAlignedTransform;
 
     }
 
@@ -12554,6 +12678,32 @@ Phaser.World.prototype.stateChange = function () {
     this.camera.reset();
 
 };
+
+/*
+ * Updates the transform of the world on all children of this world.
+ *
+ * @method Phaser.World#updateTransform
+ * @private
+ */
+Phaser.World.prototype.updateTransform = function () {
+
+    if (!this.visible)
+    {
+        return;
+    }
+
+    //this.displayObjectUpdateTransform();
+    this.worldTransform.copyFrom(this.camera.transform);
+
+    for (var i = 0; i < this.children.length; i++)
+    {
+        this.children[i].updateTransform();
+    }
+
+};
+
+// Performance increase to avoid using call()
+//Phaser.World.prototype.displayObjectContainerUpdateTransform = PIXI.DisplayObjectContainer.prototype.updateTransform;
 
 /**
 * Updates the size of this world and sets World.x/y to the given values
@@ -23468,7 +23618,7 @@ Phaser.Component.Core.preUpdate = function () {
         return false;
     }
 
-    this.world.setTo(this.game.camera.x + this.worldTransform.tx, this.game.camera.y + this.worldTransform.ty);
+    this.world.setTo(this.x, this.y);
 
     if (this.visible)
     {
@@ -24771,7 +24921,7 @@ Phaser.Component.InWorld.preUpdate = function () {
 Phaser.Component.InWorld.prototype = {
 
     /**
-    * If this is set to `true` the Game Object checks if it is within the World bounds each frame. 
+    * If this is set to `true` the Game Object checks if it is within the World bounds each frame.
     * 
     * When it is no longer intersecting the world bounds it dispatches the `onOutOfBounds` event.
     * 
@@ -30118,6 +30268,31 @@ Phaser.BitmapData.prototype = {
         this.op = 'luminosity';
         return this;
 
+    },
+    
+    /**
+    * Updates a portion of the BitmapData from a source Bitmap.
+    * This optimization is important if calling update() on a large Bitmap is causing performance issues.
+    * Make sure you use getPixel32() instead of getPixel().
+    * This does not work with floating point numbers for x and y.
+    *
+    * @method Phaser.BitmapData#copyBitmapData
+    * @param {Phaser.BitmapData} [source] - The BitmapData you wish to copy.
+    * @param {number} [x] - The x coordinate of the top-left of the area to copy.
+    * @param {number} [y] - The y coordinate of the top-left of the area to copy.
+    * @return {Phaser.BitmapData} This BitmapData object for method chaining.
+    */
+    copyBitmapData: function(source, x, y) {
+
+        source.update();
+        for (var i = 0, destRowStart; i < source.height; i++) {
+            destRowStart = (y + i) * this.width + x;
+            for (var j = 0; j < source.width; j++) {
+                this.pixels[destRowStart + j] = source.pixels[i * source.width + j];
+            }
+        }
+        return this;
+
     }
 
 };
@@ -34060,7 +34235,7 @@ Phaser.RenderTexture.prototype._renderCanvas = function (displayObject, matrix, 
         wt.append(matrix);
     }
 
-    // Time to update all the children of the displayObject with the new matrix (what new matrix? there isn't one!)
+    // Time to update all the children of the displayObject with their parent's new matrix
     for (var i = 0; i < displayObject.children.length; i++)
     {
         displayObject.children[i].updateTransform();
@@ -42581,6 +42756,20 @@ Phaser.Math = {
         }
 
         return { sin: sinTable, cos: cosTable, length: length };
+
+    },
+
+    /**
+    * Returns the length of the hypotenuse connecting two segments of given lengths.
+    *
+    * @method Phaser.Math#hypot
+    * @param {number} a
+    * @param {number} b
+    * @return {number} The length of the hypotenuse connecting the given lengths.
+    */
+    hypot: function (a, b) {
+
+        return Math.sqrt(a * a + b * b);
 
     },
 
@@ -54328,7 +54517,9 @@ Phaser.Loader.prototype = {
         file.data.src = this.transformUrl(file.url, file);
 
         // Image is immediately-available/cached
-        if (file.data.complete && file.data.width && file.data.height)
+        // Special Firefox magic, exclude from cached reload
+        // More info here: https://github.com/photonstorm/phaser/issues/2534
+        if (!this.game.device.firefox && file.data.complete && file.data.width && file.data.height)
         {
             file.data.onload = null;
             file.data.onerror = null;
@@ -67582,6 +67773,10 @@ Phaser.Physics.Arcade.Body.prototype = {
         this.blocked.left = false;
         this.blocked.right = false;
 
+        this.overlapR = 0;
+        this.overlapX = 0;
+        this.overlapY = 0;
+
         this.embedded = false;
 
         this.updateBounds();
@@ -68161,8 +68356,7 @@ Phaser.Physics.Arcade.Body.prototype = {
         this.rotation = this.sprite.angle;
         this.preRotation = this.rotation;
 
-        this._sx = this.sprite.scale.x;
-        this._sy = this.sprite.scale.y;
+        this.updateBounds();
 
         this.center.setTo(this.position.x + this.halfWidth, this.position.y + this.halfHeight);
 
@@ -68442,13 +68636,26 @@ Phaser.Physics.Arcade.Body.render = function (context, body, color, filled) {
 
     color = color || 'rgba(0,255,0,0.4)';
 
+    var cameraTransform = body.game.camera.transform;
+
     context.fillStyle = color;
     context.strokeStyle = color;
+
+    context.save();
+
+    context.setTransform(
+        cameraTransform.a,
+        cameraTransform.b,
+        cameraTransform.c,
+        cameraTransform.d,
+        cameraTransform.tx,
+        cameraTransform.ty
+    );
 
     if (body.isCircle)
     {
         context.beginPath();
-        context.arc(body.center.x - body.game.camera.x, body.center.y - body.game.camera.y, body.radius, 0, 2 * Math.PI);
+        context.arc(body.center.x, body.center.y, body.radius, 0, 2 * Math.PI);
 
         if (filled)
         {
@@ -68463,13 +68670,15 @@ Phaser.Physics.Arcade.Body.render = function (context, body, color, filled) {
     {
         if (filled)
         {
-            context.fillRect(body.position.x - body.game.camera.x, body.position.y - body.game.camera.y, body.width, body.height);
+            context.fillRect(body.position.x, body.position.y, body.width, body.height);
         }
         else
         {
-            context.strokeRect(body.position.x - body.game.camera.x, body.position.y - body.game.camera.y, body.width, body.height);
+            context.strokeRect(body.position.x, body.position.y, body.width, body.height);
         }
     }
+
+    context.restore();
 
 };
 
@@ -68536,8 +68745,8 @@ Phaser.Physics.Arcade.TilemapCollision.prototype = {
         }
 
         var mapData = tilemapLayer.getTiles(
-            sprite.body.position.x - sprite.body.tilePadding.x,
-            sprite.body.position.y - sprite.body.tilePadding.y,
+            sprite.body.position.x - sprite.body.tilePadding.x - tilemapLayer.getTileOffsetX(),
+            sprite.body.position.y - sprite.body.tilePadding.y - tilemapLayer.getTileOffsetY(),
             sprite.body.width + sprite.body.tilePadding.x,
             sprite.body.height + sprite.body.tilePadding.y,
             false, false);
@@ -68626,8 +68835,8 @@ Phaser.Physics.Arcade.TilemapCollision.prototype = {
             return false;
         }
         
-        var tilemapLayerOffsetX = (!tilemapLayer.fixedToCamera) ? tilemapLayer.position.x : 0;
-        var tilemapLayerOffsetY = (!tilemapLayer.fixedToCamera) ? tilemapLayer.position.y : 0;
+        var tilemapLayerOffsetX = tilemapLayer.getTileOffsetX();
+        var tilemapLayerOffsetY = tilemapLayer.getTileOffsetY();
 
         //  We re-check for collision in case body was separated in a previous step
         if (!tile.intersects((body.position.x - tilemapLayerOffsetX), (body.position.y - tilemapLayerOffsetY), (body.right - tilemapLayerOffsetX), (body.bottom - tilemapLayerOffsetY)))
@@ -68739,7 +68948,7 @@ Phaser.Physics.Arcade.TilemapCollision.prototype = {
     tileCheckX: function (body, tile, tilemapLayer) {
 
         var ox = 0;
-        var tilemapLayerOffsetX = (!tilemapLayer.fixedToCamera) ? tilemapLayer.position.x : 0;
+        var tilemapLayerOffsetX = tilemapLayer.getTileOffsetX();
 
         if (body.deltaX() < 0 && !body.blocked.left && tile.collideRight && body.checkCollision.left)
         {
@@ -68797,7 +69006,7 @@ Phaser.Physics.Arcade.TilemapCollision.prototype = {
     tileCheckY: function (body, tile, tilemapLayer) {
 
         var oy = 0;
-        var tilemapLayerOffsetY = (!tilemapLayer.fixedToCamera) ? tilemapLayer.position.y : 0;
+        var tilemapLayerOffsetY = tilemapLayer.getTileOffsetY();
 
         if (body.deltaY() < 0 && !body.blocked.up && tile.collideDown && body.checkCollision.up)
         {
@@ -77049,7 +77258,7 @@ Phaser.TilemapLayer = function (game, tilemap, index, width, height) {
 
         // Collision width/height (pixels)
         // What purpose do these have? Most things use tile width/height directly.
-        // This also only extends collisions right and down.       
+        // This also only extends collisions right and down.
         cw: tilemap.tileWidth,
         ch: tilemap.tileHeight,
 
@@ -77067,10 +77276,28 @@ Phaser.TilemapLayer = function (game, tilemap, index, width, height) {
 
     /**
     * The current canvas top after scroll is applied.
-    * @propety {number} _scrollY
+    * @property {number} _scrollY
     * @private
     */
     this._scrollY = 0;
+
+    /**
+     * The scale of the layer's sprite during the last update.
+     * @property {Phaser.Point}
+     */
+    this._lastScale = new Phaser.Point(this.scale.x, this.scale.y);
+
+    /**
+     * The position offset of the layer's tiles.
+     * @property {Phaser.Point}
+     */
+    this.tileOffset = new Phaser.Point(this.layer.offsetX || 0, this.layer.offsetY || 0);
+
+    /**
+     * The scale of the layer's tiles.
+     * @property {Phaser.Point}
+     */
+    this.tileScale = new Phaser.Point(1, 1);
 
     /**
     * Used for caching the tiles / array of tiles.
@@ -77133,21 +77360,33 @@ Phaser.TilemapLayer.prototype.preUpdate = function() {
 };
 
 /**
-* Automatically called by World.postUpdate. Handles cache updates.
+* Automatically called by World.postUpdate. Handles cache and fixedToCamera
+* updates.
 *
 * @method Phaser.TilemapLayer#postUpdate
 * @protected
 */
 Phaser.TilemapLayer.prototype.postUpdate = function () {
 
+    var cameraTransform = this.game.camera.axisAlignedTransform;
+
     if (this.fixedToCamera)
     {
-        this.position.x = (this.game.camera.view.x + this.cameraOffset.x) / this.game.camera.scale.x;
-        this.position.y = (this.game.camera.view.y + this.cameraOffset.y) / this.game.camera.scale.y;
+        // If the layer is fixed to the camera, we want to reverse the camera
+        // transform using the layer's sprite properties so that it still fills
+        // the screen, as well as scale the tiles appropriately
+        this.scale.x = 1.0 / this.game.camera.scale.x;
+        this.scale.y = 1.0 / this.game.camera.scale.y;
+        this.position.x = (-cameraTransform.tx + this.cameraOffset.x) / this.game.camera.scale.x;
+        this.position.y = (-cameraTransform.ty + this.cameraOffset.y) / this.game.camera.scale.y;
+        this.scrollFactorX = 1.0 / this.game.camera.scale.x;
+        this.scrollFactorY = 1.0 / this.game.camera.scale.y;
+        this.tileScale.x = this.game.camera.scale.x;
+        this.tileScale.y = this.game.camera.scale.y;
     }
 
-    this._scrollX = this.game.camera.view.x * this.scrollFactorX / this.scale.x;
-    this._scrollY = this.game.camera.view.y * this.scrollFactorY / this.scale.y;
+    this._scrollX = (-cameraTransform.tx - this.tileOffset.x) * this.scrollFactorX / this.scale.x;
+    this._scrollY = (-cameraTransform.ty - this.tileOffset.y) * this.scrollFactorY / this.scale.y;
 
 };
 
@@ -77160,15 +77399,6 @@ Phaser.TilemapLayer.prototype.postUpdate = function () {
 */
 Phaser.TilemapLayer.prototype._renderCanvas = function (renderSession) {
 
-    if (this.fixedToCamera)
-    {
-        this.position.x = (this.game.camera.view.x + this.cameraOffset.x) / this.game.camera.scale.x;
-        this.position.y = (this.game.camera.view.y + this.cameraOffset.y) / this.game.camera.scale.y;
-    }
-
-    this._scrollX = this.game.camera.view.x * this.scrollFactorX / this.scale.x;
-    this._scrollY = this.game.camera.view.y * this.scrollFactorY / this.scale.y;
-
     this.render();
 
     PIXI.Sprite.prototype._renderCanvas.call(this, renderSession);
@@ -77176,22 +77406,13 @@ Phaser.TilemapLayer.prototype._renderCanvas = function (renderSession) {
 };
 
 /**
-* Automatically called by the Canvas Renderer.
+* Automatically called by the WebGL Renderer.
 * Overrides the Sprite._renderWebGL function.
 *
 * @method Phaser.TilemapLayer#_renderWebGL
 * @private
 */
 Phaser.TilemapLayer.prototype._renderWebGL = function (renderSession) {
-
-    if (this.fixedToCamera)
-    {
-        this.position.x = (this.game.camera.view.x + this.cameraOffset.x) / this.game.camera.scale.x;
-        this.position.y = (this.game.camera.view.y + this.cameraOffset.y) / this.game.camera.scale.y;
-    }
-    
-    this._scrollX = this.game.camera.view.x * this.scrollFactorX / this.scale.x;
-    this._scrollY = this.game.camera.view.y * this.scrollFactorY / this.scale.y;
 
     this.render();
 
@@ -77204,7 +77425,7 @@ Phaser.TilemapLayer.prototype._renderWebGL = function (renderSession) {
 *
 * @method Phaser.TilemapLayer#destroy
 */
-Phaser.TilemapLayer.prototype.destroy = function() {
+Phaser.TilemapLayer.prototype.destroy = function () {
 
     Phaser.CanvasPool.remove(this);
 
@@ -77263,90 +77484,28 @@ Phaser.TilemapLayer.prototype.resizeWorld = function () {
 };
 
 /**
-* Take an x coordinate that doesn't account for scrollFactorX and 'fix' it into a scrolled local space.
-*
-* @method Phaser.TilemapLayer#_fixX
-* @private
-* @param {number} x - x coordinate in camera space
-* @return {number} x coordinate in scrollFactor-adjusted dimensions
-*/
-Phaser.TilemapLayer.prototype._fixX = function (x) {
+ * Get the X axis position offset of this layer's tiles.
+ *
+ * @method Phaser.TilemapLayer#getTileOffsetX
+ * @public
+ * @return {number}
+ */
+Phaser.TilemapLayer.prototype.getTileOffsetX = function () {
 
-    if (this.scrollFactorX === 1 || (this.scrollFactorX === 0 && this.position.x === 0))
-    {
-        return x;
-    }
-    
-    //  This executes if the scrollFactorX is 0 and the x position of the tilemap is off from standard.
-    if (this.scrollFactorX === 0 && this.position.x !== 0)
-    {
-        return x - this.position.x;
-    }
-
-    return this._scrollX + (x - (this._scrollX / this.scrollFactorX));
+    return this.tileOffset.x || ((!this.fixedToCamera) ? this.position.x : 0);
 
 };
 
 /**
-* Take an x coordinate that _does_ account for scrollFactorX and 'unfix' it back to camera space.
-*
-* @method Phaser.TilemapLayer#_unfixX
-* @private
-* @param {number} x - x coordinate in scrollFactor-adjusted dimensions
-* @return {number} x coordinate in camera space
-*/
-Phaser.TilemapLayer.prototype._unfixX = function (x) {
+ * Get the Y axis position offset of this layer's tiles.
+ *
+ * @method Phaser.TilemapLayer#getTileOffsetY
+ * @public
+ * @return {number}
+ */
+Phaser.TilemapLayer.prototype.getTileOffsetY = function () {
 
-    if (this.scrollFactorX === 1)
-    {
-        return x;
-    }
-
-    return (this._scrollX / this.scrollFactorX) + (x - this._scrollX);
-
-};
-
-/**
-* Take a y coordinate that doesn't account for scrollFactorY and 'fix' it into a scrolled local space.
-*
-* @method Phaser.TilemapLayer#_fixY
-* @private
-* @param {number} y - y coordinate in camera space
-* @return {number} y coordinate in scrollFactor-adjusted dimensions
-*/
-Phaser.TilemapLayer.prototype._fixY = function (y) {
-
-    if (this.scrollFactorY === 1 || (this.scrollFactorY === 0 && this.position.y === 0))
-    {
-        return y;
-    }
-    
-    //  This executes if the scrollFactorY is 0 and the y position of the tilemap is off from standard.
-    if (this.scrollFactorY === 0 && this.position.y !== 0)
-    {
-        return y - this.position.y;
-    }
-    
-    return this._scrollY + (y - (this._scrollY / this.scrollFactorY));
-
-};
-
-/**
-* Take a y coordinate that _does_ account for scrollFactorY and 'unfix' it back to camera space.
-*
-* @method Phaser.TilemapLayer#_unfixY
-* @private
-* @param {number} y - y coordinate in scrollFactor-adjusted dimensions
-* @return {number} y coordinate in camera space
-*/
-Phaser.TilemapLayer.prototype._unfixY = function (y) {
-
-    if (this.scrollFactorY === 1)
-    {
-        return y;
-    }
-
-    return (this._scrollY / this.scrollFactorY) + (y - this._scrollY);
+    return this.tileOffset.y || ((!this.fixedToCamera) ? this.position.y : 0);
 
 };
 
@@ -77360,8 +77519,7 @@ Phaser.TilemapLayer.prototype._unfixY = function (y) {
 */
 Phaser.TilemapLayer.prototype.getTileX = function (x) {
 
-    // var tileWidth = this.tileWidth * this.scale.x;
-    return Math.floor(this._fixX(x) / this._mc.tileWidth);
+    return Math.floor(x / this._mc.tileWidth);
 
 };
 
@@ -77375,8 +77533,7 @@ Phaser.TilemapLayer.prototype.getTileX = function (x) {
 */
 Phaser.TilemapLayer.prototype.getTileY = function (y) {
 
-    // var tileHeight = this.tileHeight * this.scale.y;
-    return Math.floor(this._fixY(y) / this._mc.tileHeight);
+    return Math.floor(y / this._mc.tileHeight);
 
 };
 
@@ -77467,22 +77624,20 @@ Phaser.TilemapLayer.prototype.getTiles = function (x, y, width, height, collides
 
     var fetchAll = !(collides || interestingFace);
 
-    //  Adjust the x,y coordinates for scrollFactor
-    x = this._fixX(x);
-    y = this._fixY(y);
-
     //  Convert the pixel values into tile coordinates
-    var tx = Math.floor(x / (this._mc.cw * this.scale.x));
-    var ty = Math.floor(y / (this._mc.ch * this.scale.y));
+    var tx = Math.floor(x / (this._mc.cw));
+    var ty = Math.floor(y / (this._mc.ch));
     //  Don't just use ceil(width/cw) to allow account for x/y diff within cell
-    var tw = Math.ceil((x + width) / (this._mc.cw * this.scale.x)) - tx;
-    var th = Math.ceil((y + height) / (this._mc.ch * this.scale.y)) - ty;
+    var tw = Math.ceil((x + width) / (this._mc.cw)) - tx;
+    var th = Math.ceil((y + height) / (this._mc.ch)) - ty;
 
+    // Clear the last set of results
     while (this._results.length)
     {
         this._results.pop();
     }
 
+    // Populate the results
     for (var wy = ty; wy < ty + th; wy++)
     {
         for (var wx = tx; wx < tx + tw; wx++)
@@ -77564,7 +77719,7 @@ Phaser.TilemapLayer.prototype.resetTilesetCache = function () {
  * This method will set the scale of the tilemap as well as update the underlying block data of this layer.
  * 
  * @method Phaser.TilemapLayer#setScale
- * @param {number} [xScale=1] - The scale factor along the X-plane 
+ * @param {number} [xScale=1] - The scale factor along the X-plane
  * @param {number} [yScale] - The scale factor along the Y-plane
  */
 Phaser.TilemapLayer.prototype.setScale = function (xScale, yScale) {
@@ -77677,8 +77832,8 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
 
     var width = this.layer.width;
     var height = this.layer.height;
-    var tw = this._mc.tileWidth;
-    var th = this._mc.tileHeight;
+    var tw = this._mc.tileWidth * this.tileScale.x;
+    var th = this._mc.tileHeight * this.tileScale.y;
 
     var tilesets = this._mc.tilesets;
     var lastAlpha = NaN;
@@ -77754,7 +77909,7 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
                 if (tile.rotation || tile.flipped)
                 {
                     context.save();
-                    context.translate(tx + tile.centerX, ty + tile.centerY);
+                    context.translate(tx + tile.centerX * this.tileScale.x, ty + tile.centerY * this.tileScale.y);
                     context.rotate(tile.rotation);
 
                     if (tile.flipped)
@@ -77762,12 +77917,12 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
                         context.scale(-1, 1);
                     }
 
-                    set.draw(context, -tile.centerX, -tile.centerY, index);
+                    set.draw(context, -tile.centerX * this.tileScale.x, -tile.centerY * this.tileScale.y, index, tw, th);
                     context.restore();
                 }
                 else
                 {
-                    set.draw(context, tx, ty, index);
+                    set.draw(context, tx, ty, index, tw, th);
                 }
             }
             else if (this.debugSettings.missingImageFill)
@@ -77802,8 +77957,8 @@ Phaser.TilemapLayer.prototype.renderDeltaScroll = function (shiftX, shiftY) {
     var renderW = this.canvas.width;
     var renderH = this.canvas.height;
 
-    var tw = this._mc.tileWidth;
-    var th = this._mc.tileHeight;
+    var tw = this._mc.tileWidth * this.tileScale.x;
+    var th = this._mc.tileHeight * this.tileScale.y;
 
     // Only cells with coordinates in the "plus" formed by `left <= x <= right` OR `top <= y <= bottom` are drawn. These coordinates may be outside the layer bounds.
 
@@ -77879,8 +78034,8 @@ Phaser.TilemapLayer.prototype.renderFull = function () {
     var renderW = this.canvas.width;
     var renderH = this.canvas.height;
 
-    var tw = this._mc.tileWidth;
-    var th = this._mc.tileHeight;
+    var tw = this._mc.tileWidth * this.tileScale.x;
+    var th = this._mc.tileHeight * this.tileScale.y;
 
     var left = Math.floor(scrollX / tw);
     var right = Math.floor((renderW - 1 + scrollX) / tw);
@@ -77907,6 +78062,14 @@ Phaser.TilemapLayer.prototype.render = function () {
     {
         return;
     }
+
+    // For now, redraw the whole map if the scale changes (this can and should be improved)
+    if (this.scale.x !== this._lastScale.x || this.scale.y !== this._lastScale.y)
+    {
+        this.dirty = true;
+    }
+
+    this._lastScale.copyFrom(this.scale);
 
     if (this.dirty || this.layer.dirty)
     {
@@ -78002,8 +78165,10 @@ Phaser.TilemapLayer.prototype.renderDebug = function () {
 
     var width = this.layer.width;
     var height = this.layer.height;
-    var tw = this._mc.tileWidth;
-    var th = this._mc.tileHeight;
+    var tw = this._mc.tileWidth * this.tileScale.x;
+    var th = this._mc.tileHeight * this.tileScale.y;
+    var cw = this._mc.cw * this.tileScale.x;
+    var ch = this._mc.ch * this.tileScale.y;
 
     var left = Math.floor(scrollX / tw);
     var right = Math.floor((renderW - 1 + scrollX) / tw);
@@ -78045,7 +78210,7 @@ Phaser.TilemapLayer.prototype.renderDebug = function () {
             if (this.debugSettings.collidingTileOverfill)
             {
                 context.fillStyle = this.debugSettings.collidingTileOverfill;
-                context.fillRect(tx, ty, this._mc.cw, this._mc.ch);
+                context.fillRect(tx, ty, cw, ch);
             }
 
             if (this.debugSettings.facingEdgeStroke)
@@ -78055,25 +78220,25 @@ Phaser.TilemapLayer.prototype.renderDebug = function () {
                 if (tile.faceTop)
                 {
                     context.moveTo(tx, ty);
-                    context.lineTo(tx + this._mc.cw, ty);
+                    context.lineTo(tx + cw, ty);
                 }
 
                 if (tile.faceBottom)
                 {
-                    context.moveTo(tx, ty + this._mc.ch);
-                    context.lineTo(tx + this._mc.cw, ty + this._mc.ch);
+                    context.moveTo(tx, ty + ch);
+                    context.lineTo(tx + cw, ty + ch);
                 }
 
                 if (tile.faceLeft)
                 {
                     context.moveTo(tx, ty);
-                    context.lineTo(tx, ty + this._mc.ch);
+                    context.lineTo(tx, ty + ch);
                 }
 
                 if (tile.faceRight)
                 {
-                    context.moveTo(tx + this._mc.cw, ty);
-                    context.lineTo(tx + this._mc.cw, ty + this._mc.ch);
+                    context.moveTo(tx + cw, ty);
+                    context.lineTo(tx + cw, ty + ch);
                 }
 
                 context.closePath();
@@ -78446,6 +78611,8 @@ Phaser.TilemapParser = {
                 widthInPixels: curl.width * json.tilewidth,
                 heightInPixels: curl.height * json.tileheight,
                 alpha: curl.opacity,
+                offsetX: curl.offsetx,
+                offsetY: curl.offsety,
                 visible: curl.visible,
                 properties: {},
                 indexes: [],
@@ -79021,8 +79188,13 @@ Phaser.Tileset.prototype = {
     * @param {number} x - The x coordinate to draw to.
     * @param {number} y - The y coordinate to draw to.
     * @param {integer} index - The index of the tile within the set to draw.
+    * @param {number} width - The width to draw the tile at.
+    * @param {number} height - The height to draw the tile at.
     */
-    draw: function (context, x, y, index) {
+    draw: function (context, x, y, index, width, height) {
+
+        width = width || this.tileWidth;
+        height = height || this.tileHeight;
 
         //  Correct the tile index for the set and bias for interlacing
         var coordIndex = (index - this.firstgid) << 1;
@@ -79037,8 +79209,8 @@ Phaser.Tileset.prototype = {
                 this.tileHeight,
                 x,
                 y,
-                this.tileWidth,
-                this.tileHeight
+                width,
+                height
             );
         }
 
@@ -79071,7 +79243,7 @@ Phaser.Tileset.prototype = {
 
         this.image = image;
         this.updateTileData(image.width, image.height);
-       
+
     },
 
     /**
@@ -79852,10 +80024,15 @@ Phaser.Particles.Arcade.Emitter.prototype.revive = function () {
 *
 * @method Phaser.Particles.Arcade.Emitter#explode
 * @param {number} [lifespan=0] - How long each particle lives once emitted in ms. 0 = forever.
-* @param {number} [quantity=0] - How many particles to launch.
+* @param {number} [quantity=this.maxParticles] - How many particles to launch.
 * @return {Phaser.Particles.Arcade.Emitter} This Emitter instance.
 */
 Phaser.Particles.Arcade.Emitter.prototype.explode = function (lifespan, quantity) {
+
+    if (quantity === undefined)
+    {
+        quantity = this.maxParticles;
+    }
 
     this._flowTotal = 0;
 
@@ -79919,9 +80096,9 @@ Phaser.Particles.Arcade.Emitter.prototype.flow = function (lifespan, frequency, 
 * @method Phaser.Particles.Arcade.Emitter#start
 * @param {boolean} [explode=true] - Whether the particles should all burst out at once (true) or at the frequency given (false).
 * @param {number} [lifespan=0] - How long each particle lives once emitted in ms. 0 = forever.
-* @param {number} [frequency=250] - Ignored if Explode is set to true. Frequency is how often to emit 1 particle. Value given in ms.
-* @param {number} [quantity=0] - How many particles to launch. 0 = "all of the particles" which will keep emitting until Emitter.maxParticles is reached.
-* @param {number} [forceQuantity=false] - If `true` and creating a particle flow, the quantity emitted will be forced to the be quantity given in this call. This can never exceed Emitter.maxParticles.
+* @param {number} [frequency=250] - Ignored if `explode` is set to true. Frequency is how often to emit 1 particle. Value given in ms.
+* @param {number} [quantity=0] - How many particles to launch in total. If `explode` is false and `forceQuantity` is false, quantity = 0 will keep emitting particles until {@link #maxParticles} is reached. If `explode` is true or `forceQuantity` is true, quantity = 0 will launch no particles.
+* @param {number} [forceQuantity=false] - If `true` and creating a particle flow, the quantity emitted will be forced to the quantity given in this call. This can never exceed Emitter.maxParticles.
 * @return {Phaser.Particles.Arcade.Emitter} This Emitter instance.
 */
 Phaser.Particles.Arcade.Emitter.prototype.start = function (explode, lifespan, frequency, quantity, forceQuantity) {

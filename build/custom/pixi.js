@@ -7,7 +7,7 @@
 *
 * Phaser - http://phaser.io
 *
-* v2.7.3 "2017-01-09" - Built: Mon Jan 09 2017 13:26:34
+* v2.7.3 "2017-01-09" - Built: Mon Feb 27 2017 20:28:28
 *
 * By Richard Davey http://www.photonstorm.com @photonstorm
 *
@@ -1493,7 +1493,6 @@ Object.defineProperty(PIXI.DisplayObjectContainer.prototype, 'height', {
 
 });
 
-
 /**
  * @author Mat Groves http://matgroves.com/ @Doormat23
  */
@@ -1688,8 +1687,15 @@ PIXI.Sprite.prototype.setTexture = function(texture, destroyBase)
 PIXI.Sprite.prototype.onTextureUpdate = function()
 {
     // so if _width is 0 then width was not set..
-    if (this._width) this.scale.x = this._width / this.texture.frame.width;
-    if (this._height) this.scale.y = this._height / this.texture.frame.height;
+    if (this._width)
+    {
+        this.scale.x = this._width / this.texture.frame.width;
+    }
+
+    if (this._height)
+    {
+        this.scale.y = this._height / this.texture.frame.height;
+    }
 };
 
 /**
@@ -1849,7 +1855,10 @@ PIXI.Sprite.prototype.getLocalBounds = function () {
 PIXI.Sprite.prototype._renderWebGL = function(renderSession, matrix)
 {
     // if the sprite is not visible or the alpha is 0 then no need to render this element
-    if (!this.visible || this.alpha <= 0 || !this.renderable) return;
+    if (!this.visible || this.alpha <= 0 || !this.renderable)
+    {
+        return;
+    }
 
     //  They provided an alternative rendering matrix, so use it
     var wt = this.worldTransform;
@@ -1890,8 +1899,15 @@ PIXI.Sprite.prototype._renderWebGL = function(renderSession, matrix)
         // time to stop the sprite batch as either a mask element or a filter draw will happen next
         spriteBatch.stop();
 
-        if (this._mask) renderSession.maskManager.popMask(this._mask, renderSession);
-        if (this._filters) renderSession.filterManager.popFilter();
+        if (this._mask)
+        {
+            renderSession.maskManager.popMask(this._mask, renderSession);
+        }
+
+        if (this._filters)
+        {
+            renderSession.filterManager.popFilter();
+        }
 
         spriteBatch.start();
     }
@@ -3685,6 +3701,7 @@ PIXI.WebGLRenderer.prototype.render = function(stage)
  * @param displayObject {DisplayObject} The DisplayObject to render
  * @param projection {Point} The projection
  * @param buffer {Array} a standard WebGL buffer
+ * @param matrix {Matrix} The 2D transform matrix
  */
 PIXI.WebGLRenderer.prototype.renderDisplayObject = function(displayObject, projection, buffer, matrix)
 {
@@ -3940,6 +3957,7 @@ PIXI.enableMultiTexture = function() {
 
 PIXI.WebGLRenderer.glContextId = 0;
 PIXI.WebGLRenderer.textureArray = [];
+
 /**
  * @author Mat Groves http://matgroves.com/ @Doormat23
  */
