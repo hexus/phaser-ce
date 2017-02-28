@@ -689,6 +689,12 @@ Phaser.Camera.prototype = {
         this.transform.tx -= (this.view.x - this._shake.x) * this.scale.x;
         this.transform.ty -= (this.view.y - this._shake.y) * this.scale.y;
 
+        if (this.roundPx)
+        {
+            this.transform.tx |= 0;
+            this.transform.ty |= 0;
+        }
+
         // Keep a copy of the axis-aligned transform
         this._axisAlignedTransform.copyFrom(this.transform);
 
