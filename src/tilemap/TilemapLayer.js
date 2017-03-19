@@ -91,7 +91,7 @@ Phaser.TilemapLayer = function (game, tilemap, index, width, height) {
     *
     * @property {?DOMCanvasElement} [copyCanvas=(auto)] - [Internal] If set, force using a separate (shared) copy canvas.
     *     Using a canvas bitblt/copy when the source and destinations region overlap produces unexpected behavior
-    *     in some browsers, notably Safari. 
+    *     in some browsers, notably Safari.
     *
     * @default
     */
@@ -772,8 +772,10 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
 
     var width = this.layer.width;
     var height = this.layer.height;
-    var tw = this._mc.tileWidth * this.tileScale.x;
-    var th = this._mc.tileHeight * this.tileScale.y;
+    var scaleX = this.tileScale.x;
+    var scaleY = this.tileScale.y;
+    var tw = this._mc.tileWidth * scaleX;
+    var th = this._mc.tileHeight * scaleY;
 
     var tilesets = this._mc.tilesets;
     var lastAlpha = NaN;
@@ -793,8 +795,8 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
     }
    
     // top-left pixel of top-left cell
-    var baseX = (left * tw) - scrollX;
-    var baseY = (top * th) - scrollY;
+    var baseX = (((left * tw)) - scrollX); // | 0;
+    var baseY = (((top * th)) - scrollY); // | 0;
 
     // Fix normStartX/normStartY such it is normalized [0..width/height). This allows a simple conditional and decrement to always keep in range [0..width/height) during the loop. The major offset bias is to take care of negative values.
     var normStartX = (left + ((1 << 20) * width)) % width;
@@ -849,7 +851,7 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
                 if (tile.rotation || tile.flipped)
                 {
                     context.save();
-                    context.translate(tx + tile.centerX * this.tileScale.x, ty + tile.centerY * this.tileScale.y);
+                    context.translate(tx + tile.centerX * scaleX, ty + tile.centerY * scaleY);
                     context.rotate(tile.rotation);
 
                     if (tile.flipped)
@@ -857,7 +859,7 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
                         context.scale(-1, 1);
                     }
 
-                    set.draw(context, -tile.centerX * this.tileScale.x, -tile.centerY * this.tileScale.y, index, tw, th);
+                    set.draw(context, -tile.centerX * scaleX, -tile.centerY * scaleY, index, tw, th);
                     context.restore();
                 }
                 else
