@@ -1064,7 +1064,7 @@ Phaser.TilemapLayer.prototype.render = function (renderSession) {
     // Ensure that the the smoothing setting is up to date for the canvases
     if (renderSession.smoothProperty)
     {
-        this.context[renderSession.smoothProperty] = (renderSession.scaleMode === PIXI.scaleModes.LINEAR);
+        this.context[renderSession.smoothProperty] = (renderSession.scaleMode === Phaser.scaleModes.LINEAR);
 
         if (this.renderSettings.copyCanvas)
         {
