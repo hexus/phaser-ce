@@ -91,7 +91,7 @@ Phaser.TilemapLayer = function (game, tilemap, index, width, height) {
     *
     * @property {?DOMCanvasElement} [copyCanvas=(auto)] - [Internal] If set, force using a separate (shared) copy canvas.
     *     Using a canvas bitblt/copy when the source and destinations region overlap produces unexpected behavior
-    *     in some browsers, notably Safari. 
+    *     in some browsers, notably Safari.
     *
     * @default
     */
@@ -339,7 +339,7 @@ Phaser.TilemapLayer.prototype.postUpdate = function () {
 */
 Phaser.TilemapLayer.prototype._renderCanvas = function (renderSession) {
 
-    this.render();
+    this.render(renderSession);
 
     PIXI.Sprite.prototype._renderCanvas.call(this, renderSession);
 
@@ -354,7 +354,7 @@ Phaser.TilemapLayer.prototype._renderCanvas = function (renderSession) {
 */
 Phaser.TilemapLayer.prototype._renderWebGL = function (renderSession) {
 
-    this.render();
+    this.render(renderSession);
 
     PIXI.Sprite.prototype._renderWebGL.call(this, renderSession);
 
@@ -381,7 +381,7 @@ Phaser.TilemapLayer.prototype.destroy = function () {
 *
 * Be aware that no validation of the new sizes takes place and the current map scroll coordinates are not
 * modified either. You will have to handle both of these things from your game code if required.
-* 
+*
 * @method Phaser.TilemapLayer#resize
 * @param {number} width - The new width of the TilemapLayer
 * @param {number} height - The new height of the TilemapLayer
@@ -657,7 +657,7 @@ Phaser.TilemapLayer.prototype.resetTilesetCache = function () {
 
 /**
  * This method will set the scale of the tilemap as well as update the underlying block data of this layer.
- * 
+ *
  * @method Phaser.TilemapLayer#setScale
  * @param {number} [xScale=1] - The scale factor along the X-plane
  * @param {number} [yScale] - The scale factor along the Y-plane
@@ -750,7 +750,7 @@ Phaser.TilemapLayer.prototype.shiftCanvas = function (context, x, y) {
         context.drawImage(canvas, dx, dy, copyW, copyH, sx, sy, copyW, copyH);
         context.restore();
     }
-    
+
 };
 
 /**
@@ -772,8 +772,10 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
 
     var width = this.layer.width;
     var height = this.layer.height;
-    var tw = this._mc.tileWidth * this.tileScale.x;
-    var th = this._mc.tileHeight * this.tileScale.y;
+    var scaleX = this.tileScale.x;
+    var scaleY = this.tileScale.y;
+    var tw = this._mc.tileWidth * scaleX;
+    var th = this._mc.tileHeight * scaleY;
 
     var tilesets = this._mc.tilesets;
     var lastAlpha = NaN;
@@ -791,10 +793,10 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
             bottom = Math.min(height - 1, bottom);
         }
     }
-   
+
     // top-left pixel of top-left cell
-    var baseX = (left * tw) - scrollX;
-    var baseY = (top * th) - scrollY;
+    var baseX = (((left * tw)) - scrollX); // | 0;
+    var baseY = (((top * th)) - scrollY); // | 0;
 
     // Fix normStartX/normStartY such it is normalized [0..width/height). This allows a simple conditional and decrement to always keep in range [0..width/height) during the loop. The major offset bias is to take care of negative values.
     var normStartX = (left + ((1 << 20) * width)) % width;
@@ -849,7 +851,7 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
                 if (tile.rotation || tile.flipped)
                 {
                     context.save();
-                    context.translate(tx + tile.centerX * this.tileScale.x, ty + tile.centerY * this.tileScale.y);
+                    context.translate(tx + tile.centerX * scaleX, ty + tile.centerY * scaleY);
                     context.rotate(tile.rotation);
 
                     if (tile.flipped)
@@ -857,7 +859,7 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
                         context.scale(-1, 1);
                     }
 
-                    set.draw(context, -tile.centerX * this.tileScale.x, -tile.centerY * this.tileScale.y, index, tw, th);
+                    set.draw(context, -tile.centerX * scaleX, -tile.centerY * scaleY, index, tw, th);
                     context.restore();
                 }
                 else
@@ -876,7 +878,7 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
                 context.fillStyle = this.debugSettings.debuggedTileOverfill;
                 context.fillRect(tx, ty, tw, th);
             }
-           
+
         }
 
     }
@@ -967,7 +969,7 @@ Phaser.TilemapLayer.prototype.renderDeltaScroll = function (shiftX, shiftY) {
 * @private
 */
 Phaser.TilemapLayer.prototype.renderFull = function () {
-    
+
     var scrollX = this._mc.scrollX;
     var scrollY = this._mc.scrollY;
 
@@ -992,9 +994,10 @@ Phaser.TilemapLayer.prototype.renderFull = function () {
 * Renders the tiles to the layer canvas and pushes to the display.
 *
 * @method Phaser.TilemapLayer#render
+* @param {object} renderSession
 * @protected
 */
-Phaser.TilemapLayer.prototype.render = function () {
+Phaser.TilemapLayer.prototype.render = function (renderSession) {
 
     var redrawAll = false;
 
@@ -1037,7 +1040,7 @@ Phaser.TilemapLayer.prototype.render = function () {
     }
 
     this.context.save();
-    
+
     mc.scrollX = scrollX;
     mc.scrollY = scrollY;
 
@@ -1055,6 +1058,17 @@ Phaser.TilemapLayer.prototype.render = function () {
         if (this.debugSettings.forceFullRedraw)
         {
             redrawAll = true;
+        }
+    }
+
+    // Ensure that the the smoothing setting is up to date for the canvases
+    if (renderSession.smoothProperty)
+    {
+        this.context[renderSession.smoothProperty] = (renderSession.scaleMode === Phaser.scaleModes.LINEAR);
+
+        if (this.renderSettings.copyCanvas)
+        {
+            this.renderSettings.copyCanvas.getContext('2d')[renderSession.smoothProperty] = this.context[renderSession.smoothProperty];
         }
     }
 
@@ -1185,7 +1199,7 @@ Phaser.TilemapLayer.prototype.renderDebug = function () {
 
                 context.stroke();
             }
-           
+
         }
 
     }

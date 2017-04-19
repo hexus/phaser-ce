@@ -223,7 +223,7 @@ Phaser.Tileset.prototype = {
 
         if (rowCount % 1 !== 0 || colCount % 1 !== 0)
         {
-            console.warn("Phaser.Tileset - " + this.name + " image tile area is not an even multiple of tile size");
+            console.warn("Phaser.Tileset - " + this.name + " image tile area is not an even multiple of tile size - (" + rowCount + ", " + colCount + ")");
         }
 
         // In Tiled a tileset image that is not an even multiple of the tile dimensions

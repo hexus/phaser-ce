@@ -299,10 +299,12 @@ Phaser.Utils.Debug.prototype = {
 
         if (camera.bounds)
         {
-            this.line('Bounds x: ' + camera.bounds.x + ' Y: ' + camera.bounds.y + ' w: ' + camera.bounds.width + ' h: ' + camera.bounds.height);
+            this.line('Bounds X: ' + camera.bounds.x + ' Y: ' + camera.bounds.y + ' W: ' + camera.bounds.width + ' H: ' + camera.bounds.height);
         }
 
-        this.line('View x: ' + camera.view.x + ' Y: ' + camera.view.y + ' w: ' + camera.view.width + ' h: ' + camera.view.height);
+        this.line('Transform A: ' + camera.transform.a + ' B: ' + camera.transform.b + ' C: ' + camera.transform.c + ' D: ' + camera.transform.d + ' X: ' + camera.transform.tx + ' Y: ' + camera.transform.ty);
+
+        this.line('View X: ' + camera.view.x + ' Y: ' + camera.view.y + ' W: ' + camera.view.width + ' H: ' + camera.view.height);
         // this.line('Screen View x: ' + camera.screenView.x + ' Y: ' + camera.screenView.y + ' w: ' + camera.screenView.width + ' h: ' + camera.screenView.height);
         this.line('Total in view: ' + camera.totalInView);
         this.stop();
