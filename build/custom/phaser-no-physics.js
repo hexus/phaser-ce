@@ -7,7 +7,7 @@
 *
 * Phaser - http://phaser.io
 *
-* v2.7.3 "2017-01-09" - Built: Mon Feb 27 2017 21:56:21
+* v2.7.3 "2017-01-09" - Built: Wed Apr 19 2017 20:36:17
 *
 * By Richard Davey http://www.photonstorm.com @photonstorm
 *
@@ -13229,13 +13229,13 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this.scale = new Phaser.Point(1, 1);
 
     /**
-     * @property {number} rotation - The rotation of the camera in radians. Control the center point of the rotation with Camera.anchor.
-     */
+    * @property {number} rotation - The rotation of the camera in radians. Control the center point of the rotation with Camera.anchor.
+    */
     this.rotation = 0;
 
     /**
-     * @property {Phaser.Point} anchor - The anchor for camera zoom and rotation. Set to 0.5,0.5 (center of the view) by default.
-     */
+    * @property {Phaser.Point} anchor - The anchor for camera zoom and rotation. Set to 0.5,0.5 (center of the view) by default.
+    */
     this.anchor = new Phaser.Point(0.5, 0.5);
 
     /**
@@ -13282,17 +13282,23 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this.fx = null;
 
     /**
-     * The 2D transform matrix used to render display objects with this camera.
-     * @property {Phaser.Matrix} matrix
-     * @protected
-     */
+    * The 2D transform matrix used to render display objects with this camera.
+    * @property {Phaser.Matrix} matrix
+    * @protected
+    */
     this.transform = new Phaser.Matrix();
 
     /**
-     * The 2D transform matrix without any rotation applied.
-     * @property {Phaser.Matrix} _axisAlignedTransform
-     * @private
-     */
+    * The transformed view of the camera.
+    * @type {Phaser.Rectangle}
+    */
+    this.transformView = new Phaser.Rectangle(x, y, width, height);
+
+    /**
+    * The 2D transform matrix without any rotation applied.
+    * @property {Phaser.Matrix} _axisAlignedTransform
+    * @private
+    */
     this._axisAlignedTransform = new Phaser.Matrix();
 
     /**
@@ -13755,37 +13761,40 @@ Phaser.Camera.prototype = {
     */
     updateTarget: function () {
 
+        var view = this.view;
+        var deadzone = this.deadzone;
+
         this._targetPosition.x = this.target.position.x;
         this._targetPosition.y = this.target.position.y;
 
         if (this.deadzone)
         {
-            this._edge = this._targetPosition.x - this.view.x;
+            this._edge = this._targetPosition.x - view.x;
 
             if (this._edge < this.deadzone.left)
             {
-                this.view.x = this.game.math.linear(this.view.x, this._targetPosition.x - this.deadzone.left, this.lerp.x);
+                view.x = this.game.math.linear(view.x, this._targetPosition.x - deadzone.left, this.lerp.x);
             }
             else if (this._edge > this.deadzone.right)
             {
-                this.view.x = this.game.math.linear(this.view.x, this._targetPosition.x - this.deadzone.right, this.lerp.x);
+                view.x = this.game.math.linear(this.view.x, this._targetPosition.x - deadzone.right, this.lerp.x);
             }
 
-            this._edge = this._targetPosition.y - this.view.y;
+            this._edge = this._targetPosition.y - view.y;
 
             if (this._edge < this.deadzone.top)
             {
-                this.view.y = this.game.math.linear(this.view.y, this._targetPosition.y - this.deadzone.top, this.lerp.y);
+                view.y = this.game.math.linear(view.y, this._targetPosition.y - deadzone.top, this.lerp.y);
             }
             else if (this._edge > this.deadzone.bottom)
             {
-                this.view.y = this.game.math.linear(this.view.y, this._targetPosition.y - this.deadzone.bottom, this.lerp.y);
+                view.y = this.game.math.linear(view.y, this._targetPosition.y - deadzone.bottom, this.lerp.y);
             }
         }
         else
         {
-            this.view.x = this.game.math.linear(this.view.x, this._targetPosition.x - this.view.halfWidth, this.lerp.x);
-            this.view.y = this.game.math.linear(this.view.y, this._targetPosition.y - this.view.halfHeight, this.lerp.y);
+            view.x = this.game.math.linear(view.x, this._targetPosition.x - view.halfWidth, this.lerp.x);
+            view.y = this.game.math.linear(view.y, this._targetPosition.y - view.halfHeight, this.lerp.y);
         }
 
         if (this.bounds)
@@ -13797,7 +13806,7 @@ Phaser.Camera.prototype = {
 
         if (this.roundPx)
         {
-            this.view.floor();
+            view.floor();
             this._shake.x = Math.floor(this._shake.x);
             this._shake.y = Math.floor(this._shake.y);
         }
@@ -13826,6 +13835,13 @@ Phaser.Camera.prototype = {
         this.transform.tx -= (this.view.x - this._shake.x) * this.scale.x;
         this.transform.ty -= (this.view.y - this._shake.y) * this.scale.y;
 
+        // Cater for rounded positioning
+        if (this.roundPx)
+        {
+            this.transform.tx |= 0;
+            this.transform.ty |= 0;
+        }
+
         // Keep a copy of the axis-aligned transform
         this._axisAlignedTransform.copyFrom(this.transform);
 
@@ -13833,6 +13849,12 @@ Phaser.Camera.prototype = {
         this.transform.translate(-anchorX, -anchorY);
         this.transform.rotate(this.rotation);
         this.transform.translate(anchorX, anchorY);
+
+        // Update the transform view
+        this.transformView.x = -this._axisAlignedTransform.tx;
+        this.transformView.y = -this._axisAlignedTransform.ty;
+        this.transformView.width = this.view.width * this.scale.x;
+        this.transformView.height = this.view.height * this.scale.y;
 
     },
 
@@ -68259,10 +68281,12 @@ Phaser.Utils.Debug.prototype = {
 
         if (camera.bounds)
         {
-            this.line('Bounds x: ' + camera.bounds.x + ' Y: ' + camera.bounds.y + ' w: ' + camera.bounds.width + ' h: ' + camera.bounds.height);
+            this.line('Bounds X: ' + camera.bounds.x + ' Y: ' + camera.bounds.y + ' W: ' + camera.bounds.width + ' H: ' + camera.bounds.height);
         }
 
-        this.line('View x: ' + camera.view.x + ' Y: ' + camera.view.y + ' w: ' + camera.view.width + ' h: ' + camera.view.height);
+        this.line('Transform A: ' + camera.transform.a + ' B: ' + camera.transform.b + ' C: ' + camera.transform.c + ' D: ' + camera.transform.d + ' X: ' + camera.transform.tx + ' Y: ' + camera.transform.ty);
+
+        this.line('View X: ' + camera.view.x + ' Y: ' + camera.view.y + ' W: ' + camera.view.width + ' H: ' + camera.view.height);
         // this.line('Screen View x: ' + camera.screenView.x + ' Y: ' + camera.screenView.y + ' w: ' + camera.screenView.width + ' h: ' + camera.screenView.height);
         this.line('Total in view: ' + camera.totalInView);
         this.stop();

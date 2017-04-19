@@ -7,7 +7,7 @@
 *
 * Phaser - http://phaser.io
 *
-* v2.7.3 "2017-01-09" - Built: Mon Feb 27 2017 21:56:15
+* v2.7.3 "2017-01-09" - Built: Wed Apr 19 2017 20:36:11
 *
 * By Richard Davey http://www.photonstorm.com @photonstorm
 *
@@ -13229,13 +13229,13 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this.scale = new Phaser.Point(1, 1);
 
     /**
-     * @property {number} rotation - The rotation of the camera in radians. Control the center point of the rotation with Camera.anchor.
-     */
+    * @property {number} rotation - The rotation of the camera in radians. Control the center point of the rotation with Camera.anchor.
+    */
     this.rotation = 0;
 
     /**
-     * @property {Phaser.Point} anchor - The anchor for camera zoom and rotation. Set to 0.5,0.5 (center of the view) by default.
-     */
+    * @property {Phaser.Point} anchor - The anchor for camera zoom and rotation. Set to 0.5,0.5 (center of the view) by default.
+    */
     this.anchor = new Phaser.Point(0.5, 0.5);
 
     /**
@@ -13282,17 +13282,23 @@ Phaser.Camera = function (game, id, x, y, width, height) {
     this.fx = null;
 
     /**
-     * The 2D transform matrix used to render display objects with this camera.
-     * @property {Phaser.Matrix} matrix
-     * @protected
-     */
+    * The 2D transform matrix used to render display objects with this camera.
+    * @property {Phaser.Matrix} matrix
+    * @protected
+    */
     this.transform = new Phaser.Matrix();
 
     /**
-     * The 2D transform matrix without any rotation applied.
-     * @property {Phaser.Matrix} _axisAlignedTransform
-     * @private
-     */
+    * The transformed view of the camera.
+    * @type {Phaser.Rectangle}
+    */
+    this.transformView = new Phaser.Rectangle(x, y, width, height);
+
+    /**
+    * The 2D transform matrix without any rotation applied.
+    * @property {Phaser.Matrix} _axisAlignedTransform
+    * @private
+    */
     this._axisAlignedTransform = new Phaser.Matrix();
 
     /**
@@ -13755,37 +13761,40 @@ Phaser.Camera.prototype = {
     */
     updateTarget: function () {
 
+        var view = this.view;
+        var deadzone = this.deadzone;
+
         this._targetPosition.x = this.target.position.x;
         this._targetPosition.y = this.target.position.y;
 
         if (this.deadzone)
         {
-            this._edge = this._targetPosition.x - this.view.x;
+            this._edge = this._targetPosition.x - view.x;
 
             if (this._edge < this.deadzone.left)
             {
-                this.view.x = this.game.math.linear(this.view.x, this._targetPosition.x - this.deadzone.left, this.lerp.x);
+                view.x = this.game.math.linear(view.x, this._targetPosition.x - deadzone.left, this.lerp.x);
             }
             else if (this._edge > this.deadzone.right)
             {
-                this.view.x = this.game.math.linear(this.view.x, this._targetPosition.x - this.deadzone.right, this.lerp.x);
+                view.x = this.game.math.linear(this.view.x, this._targetPosition.x - deadzone.right, this.lerp.x);
             }
 
-            this._edge = this._targetPosition.y - this.view.y;
+            this._edge = this._targetPosition.y - view.y;
 
             if (this._edge < this.deadzone.top)
             {
-                this.view.y = this.game.math.linear(this.view.y, this._targetPosition.y - this.deadzone.top, this.lerp.y);
+                view.y = this.game.math.linear(view.y, this._targetPosition.y - deadzone.top, this.lerp.y);
             }
             else if (this._edge > this.deadzone.bottom)
             {
-                this.view.y = this.game.math.linear(this.view.y, this._targetPosition.y - this.deadzone.bottom, this.lerp.y);
+                view.y = this.game.math.linear(view.y, this._targetPosition.y - deadzone.bottom, this.lerp.y);
             }
         }
         else
         {
-            this.view.x = this.game.math.linear(this.view.x, this._targetPosition.x - this.view.halfWidth, this.lerp.x);
-            this.view.y = this.game.math.linear(this.view.y, this._targetPosition.y - this.view.halfHeight, this.lerp.y);
+            view.x = this.game.math.linear(view.x, this._targetPosition.x - view.halfWidth, this.lerp.x);
+            view.y = this.game.math.linear(view.y, this._targetPosition.y - view.halfHeight, this.lerp.y);
         }
 
         if (this.bounds)
@@ -13797,7 +13806,7 @@ Phaser.Camera.prototype = {
 
         if (this.roundPx)
         {
-            this.view.floor();
+            view.floor();
             this._shake.x = Math.floor(this._shake.x);
             this._shake.y = Math.floor(this._shake.y);
         }
@@ -13826,6 +13835,13 @@ Phaser.Camera.prototype = {
         this.transform.tx -= (this.view.x - this._shake.x) * this.scale.x;
         this.transform.ty -= (this.view.y - this._shake.y) * this.scale.y;
 
+        // Cater for rounded positioning
+        if (this.roundPx)
+        {
+            this.transform.tx |= 0;
+            this.transform.ty |= 0;
+        }
+
         // Keep a copy of the axis-aligned transform
         this._axisAlignedTransform.copyFrom(this.transform);
 
@@ -13833,6 +13849,12 @@ Phaser.Camera.prototype = {
         this.transform.translate(-anchorX, -anchorY);
         this.transform.rotate(this.rotation);
         this.transform.translate(anchorX, anchorY);
+
+        // Update the transform view
+        this.transformView.x = -this._axisAlignedTransform.tx;
+        this.transformView.y = -this._axisAlignedTransform.ty;
+        this.transformView.width = this.view.width * this.scale.x;
+        this.transformView.height = this.view.height * this.scale.y;
 
     },
 
@@ -68259,10 +68281,12 @@ Phaser.Utils.Debug.prototype = {
 
         if (camera.bounds)
         {
-            this.line('Bounds x: ' + camera.bounds.x + ' Y: ' + camera.bounds.y + ' w: ' + camera.bounds.width + ' h: ' + camera.bounds.height);
+            this.line('Bounds X: ' + camera.bounds.x + ' Y: ' + camera.bounds.y + ' W: ' + camera.bounds.width + ' H: ' + camera.bounds.height);
         }
 
-        this.line('View x: ' + camera.view.x + ' Y: ' + camera.view.y + ' w: ' + camera.view.width + ' h: ' + camera.view.height);
+        this.line('Transform A: ' + camera.transform.a + ' B: ' + camera.transform.b + ' C: ' + camera.transform.c + ' D: ' + camera.transform.d + ' X: ' + camera.transform.tx + ' Y: ' + camera.transform.ty);
+
+        this.line('View X: ' + camera.view.x + ' Y: ' + camera.view.y + ' W: ' + camera.view.width + ' H: ' + camera.view.height);
         // this.line('Screen View x: ' + camera.screenView.x + ' Y: ' + camera.screenView.y + ' w: ' + camera.screenView.width + ' h: ' + camera.screenView.height);
         this.line('Total in view: ' + camera.totalInView);
         this.stop();
@@ -79214,7 +79238,7 @@ Phaser.TilemapLayer = function (game, tilemap, index, width, height) {
     *
     * @property {?DOMCanvasElement} [copyCanvas=(auto)] - [Internal] If set, force using a separate (shared) copy canvas.
     *     Using a canvas bitblt/copy when the source and destinations region overlap produces unexpected behavior
-    *     in some browsers, notably Safari. 
+    *     in some browsers, notably Safari.
     *
     * @default
     */
@@ -79462,7 +79486,7 @@ Phaser.TilemapLayer.prototype.postUpdate = function () {
 */
 Phaser.TilemapLayer.prototype._renderCanvas = function (renderSession) {
 
-    this.render();
+    this.render(renderSession);
 
     PIXI.Sprite.prototype._renderCanvas.call(this, renderSession);
 
@@ -79477,7 +79501,7 @@ Phaser.TilemapLayer.prototype._renderCanvas = function (renderSession) {
 */
 Phaser.TilemapLayer.prototype._renderWebGL = function (renderSession) {
 
-    this.render();
+    this.render(renderSession);
 
     PIXI.Sprite.prototype._renderWebGL.call(this, renderSession);
 
@@ -79504,7 +79528,7 @@ Phaser.TilemapLayer.prototype.destroy = function () {
 *
 * Be aware that no validation of the new sizes takes place and the current map scroll coordinates are not
 * modified either. You will have to handle both of these things from your game code if required.
-* 
+*
 * @method Phaser.TilemapLayer#resize
 * @param {number} width - The new width of the TilemapLayer
 * @param {number} height - The new height of the TilemapLayer
@@ -79780,7 +79804,7 @@ Phaser.TilemapLayer.prototype.resetTilesetCache = function () {
 
 /**
  * This method will set the scale of the tilemap as well as update the underlying block data of this layer.
- * 
+ *
  * @method Phaser.TilemapLayer#setScale
  * @param {number} [xScale=1] - The scale factor along the X-plane
  * @param {number} [yScale] - The scale factor along the Y-plane
@@ -79873,7 +79897,7 @@ Phaser.TilemapLayer.prototype.shiftCanvas = function (context, x, y) {
         context.drawImage(canvas, dx, dy, copyW, copyH, sx, sy, copyW, copyH);
         context.restore();
     }
-    
+
 };
 
 /**
@@ -79895,8 +79919,10 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
 
     var width = this.layer.width;
     var height = this.layer.height;
-    var tw = this._mc.tileWidth * this.tileScale.x;
-    var th = this._mc.tileHeight * this.tileScale.y;
+    var scaleX = this.tileScale.x;
+    var scaleY = this.tileScale.y;
+    var tw = this._mc.tileWidth * scaleX;
+    var th = this._mc.tileHeight * scaleY;
 
     var tilesets = this._mc.tilesets;
     var lastAlpha = NaN;
@@ -79914,10 +79940,10 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
             bottom = Math.min(height - 1, bottom);
         }
     }
-   
+
     // top-left pixel of top-left cell
-    var baseX = (left * tw) - scrollX;
-    var baseY = (top * th) - scrollY;
+    var baseX = (((left * tw)) - scrollX); // | 0;
+    var baseY = (((top * th)) - scrollY); // | 0;
 
     // Fix normStartX/normStartY such it is normalized [0..width/height). This allows a simple conditional and decrement to always keep in range [0..width/height) during the loop. The major offset bias is to take care of negative values.
     var normStartX = (left + ((1 << 20) * width)) % width;
@@ -79972,7 +79998,7 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
                 if (tile.rotation || tile.flipped)
                 {
                     context.save();
-                    context.translate(tx + tile.centerX * this.tileScale.x, ty + tile.centerY * this.tileScale.y);
+                    context.translate(tx + tile.centerX * scaleX, ty + tile.centerY * scaleY);
                     context.rotate(tile.rotation);
 
                     if (tile.flipped)
@@ -79980,7 +80006,7 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
                         context.scale(-1, 1);
                     }
 
-                    set.draw(context, -tile.centerX * this.tileScale.x, -tile.centerY * this.tileScale.y, index, tw, th);
+                    set.draw(context, -tile.centerX * scaleX, -tile.centerY * scaleY, index, tw, th);
                     context.restore();
                 }
                 else
@@ -79999,7 +80025,7 @@ Phaser.TilemapLayer.prototype.renderRegion = function (scrollX, scrollY, left, t
                 context.fillStyle = this.debugSettings.debuggedTileOverfill;
                 context.fillRect(tx, ty, tw, th);
             }
-           
+
         }
 
     }
@@ -80090,7 +80116,7 @@ Phaser.TilemapLayer.prototype.renderDeltaScroll = function (shiftX, shiftY) {
 * @private
 */
 Phaser.TilemapLayer.prototype.renderFull = function () {
-    
+
     var scrollX = this._mc.scrollX;
     var scrollY = this._mc.scrollY;
 
@@ -80115,9 +80141,10 @@ Phaser.TilemapLayer.prototype.renderFull = function () {
 * Renders the tiles to the layer canvas and pushes to the display.
 *
 * @method Phaser.TilemapLayer#render
+* @param {object} renderSession
 * @protected
 */
-Phaser.TilemapLayer.prototype.render = function () {
+Phaser.TilemapLayer.prototype.render = function (renderSession) {
 
     var redrawAll = false;
 
@@ -80160,7 +80187,7 @@ Phaser.TilemapLayer.prototype.render = function () {
     }
 
     this.context.save();
-    
+
     mc.scrollX = scrollX;
     mc.scrollY = scrollY;
 
@@ -80178,6 +80205,17 @@ Phaser.TilemapLayer.prototype.render = function () {
         if (this.debugSettings.forceFullRedraw)
         {
             redrawAll = true;
+        }
+    }
+
+    // Ensure that the the smoothing setting is up to date for the canvases
+    if (renderSession.smoothProperty)
+    {
+        this.context[renderSession.smoothProperty] = (renderSession.scaleMode === Phaser.scaleModes.LINEAR);
+
+        if (this.renderSettings.copyCanvas)
+        {
+            this.renderSettings.copyCanvas.getContext('2d')[renderSession.smoothProperty] = this.context[renderSession.smoothProperty];
         }
     }
 
@@ -80308,7 +80346,7 @@ Phaser.TilemapLayer.prototype.renderDebug = function () {
 
                 context.stroke();
             }
-           
+
         }
 
     }
@@ -81345,7 +81383,7 @@ Phaser.Tileset.prototype = {
 
         if (rowCount % 1 !== 0 || colCount % 1 !== 0)
         {
-            console.warn("Phaser.Tileset - " + this.name + " image tile area is not an even multiple of tile size");
+            console.warn("Phaser.Tileset - " + this.name + " image tile area is not an even multiple of tile size - (" + rowCount + ", " + colCount + ")");
         }
 
         // In Tiled a tileset image that is not an even multiple of the tile dimensions
