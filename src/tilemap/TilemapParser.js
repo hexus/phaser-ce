@@ -475,7 +475,7 @@ Phaser.TilemapParser = {
             {
                 lastSet.lastgid = set.firstgid - 1;
             }
-            
+
             lastSet = set;
         }
 
@@ -527,6 +527,8 @@ Phaser.TilemapParser = {
                         type: curo.objects[v].hasOwnProperty("type") ? curo.objects[v].type : "",
                         x: curo.objects[v].x,
                         y: curo.objects[v].y,
+                        width: curo.objects[v].width,
+                        height: curo.objects[v].height,
                         visible: curo.objects[v].visible,
                         properties: curo.objects[v].properties
 
