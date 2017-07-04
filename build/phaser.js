@@ -7,7 +7,7 @@
 *
 * Phaser - http://phaser.io
 *
-* v2.7.3 "2017-01-09" - Built: Sun Jun 25 2017 13:33:49
+* v2.7.3 "2017-01-09" - Built: Tue Jul 04 2017 01:19:22
 *
 * By Richard Davey http://www.photonstorm.com @photonstorm
 *
@@ -99997,7 +99997,7 @@ Phaser.TilemapParser = {
             {
                 lastSet.lastgid = set.firstgid - 1;
             }
-            
+
             lastSet = set;
         }
 
@@ -100049,6 +100049,8 @@ Phaser.TilemapParser = {
                         type: curo.objects[v].hasOwnProperty("type") ? curo.objects[v].type : "",
                         x: curo.objects[v].x,
                         y: curo.objects[v].y,
+                        width: curo.objects[v].width,
+                        height: curo.objects[v].height,
                         visible: curo.objects[v].visible,
                         properties: curo.objects[v].properties
 
