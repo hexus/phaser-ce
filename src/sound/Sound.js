@@ -175,6 +175,26 @@ Phaser.Sound = function (game, key, volume, loop, connect) {
     */
     this._sound = null;
 
+	/**
+    * @property {object} _globalVolume - Internal var for keeping track of global volume when using AudioTag
+    * @private
+    */
+	this._globalVolume = 1;
+
+    /**
+    * @property {boolean} _markedToDelete - When audio stops, disconnect Web Audio nodes.
+    * @private
+    */
+    this._markedToDelete = false;
+
+    /**
+    * @property {boolean} _removeFromSoundManager - When audio stops, remove it from the Sound Manager and destroy it.
+    * @private
+    */
+    this._removeFromSoundManager = false;
+
+
+
     if (this.usingWebAudio)
     {
         this.context = this.game.sound.context;
@@ -388,7 +408,7 @@ Phaser.Sound.prototype = {
     /**
     * Called automatically by the AudioContext when the sound stops playing.
     * Doesn't get called if the sound is set to loop or is a section of an Audio Sprite.
-    * 
+    *
     * @method Phaser.Sound#onEndedHandler
     * @protected
     */
@@ -399,6 +419,38 @@ Phaser.Sound.prototype = {
         this.currentTime = this.durationMS;
         this.stop();
 
+        if (this._markedToDelete)
+        {
+            if (this.externalNode)
+            {
+                this._sound.disconnect(this.externalNode);
+            }
+            else if (this.gainNode)
+            {
+                this._sound.disconnect(this.gainNode);
+            }
+
+            if (this._removeFromSoundManager)
+            {
+                this.game.sound.remove(this);
+            }
+            else
+            {
+                this.markers = {};
+                this.context = null;
+                this._buffer = null;
+                this.externalNode = null;
+
+                this.onDecoded.dispose();
+                this.onPlay.dispose();
+                this.onPause.dispose();
+                this.onResume.dispose();
+                this.onLoop.dispose();
+                this.onStop.dispose();
+                this.onMute.dispose();
+                this.onMarkerComplete.dispose();
+            }
+        }
     },
 
     /**
@@ -504,7 +556,7 @@ Phaser.Sound.prototype = {
 
     /**
     * Play this sound, or a marked section of it.
-    * 
+    *
     * @method Phaser.Sound#play
     * @param {string} [marker=''] - If you want to play a marker then give the key here, otherwise leave blank to play the full sound.
     * @param {number} [position=0] - The starting position to play the sound from - this is ignored if you provide a marker.
@@ -561,7 +613,7 @@ Phaser.Sound.prototype = {
 
         if (marker === '' && Object.keys(this.markers).length > 0)
         {
-            //  If they didn't specify a marker but this is an audio sprite, 
+            //  If they didn't specify a marker but this is an audio sprite,
             //  we should never play the entire thing
             return this;
         }
@@ -889,6 +941,7 @@ Phaser.Sound.prototype = {
                 {
                     this._sound.disconnect(this.gainNode);
                 }
+
             }
             else if (this.usingAudioTag)
             {
@@ -948,7 +1001,7 @@ Phaser.Sound.prototype = {
         this.fadeTo(duration, 1);
 
     },
-    
+
     /**
     * Decreases the volume of this Sound from its current value to 0 over the duration specified.
     * At the end of the fade Sound.onFadeComplete is dispatched with this Sound object as the first parameter,
@@ -965,7 +1018,7 @@ Phaser.Sound.prototype = {
 
     /**
     * Fades the volume of this Sound from its current value to the given volume over the duration specified.
-    * At the end of the fade Sound.onFadeComplete is dispatched with this Sound object as the first parameter, 
+    * At the end of the fade Sound.onFadeComplete is dispatched with this Sound object as the first parameter,
     * and the final volume (volume) as the second parameter.
     *
     * @method Phaser.Sound#fadeTo
@@ -1027,7 +1080,8 @@ Phaser.Sound.prototype = {
 
         if (this.usingAudioTag && this._sound)
         {
-            this._sound.volume = globalVolume * this._volume;
+            this._globalVolume = globalVolume;
+            this._sound.volume = this._globalVolume * this._volume;
         }
 
     },
@@ -1042,6 +1096,8 @@ Phaser.Sound.prototype = {
 
         if (remove === undefined) { remove = true; }
 
+        this._markedToDelete = true;
+        this._removeFromSoundManager = remove;
         this.stop();
 
         if (remove)
@@ -1064,7 +1120,6 @@ Phaser.Sound.prototype = {
             this.onMute.dispose();
             this.onMarkerComplete.dispose();
         }
-
     }
 
 };
@@ -1164,8 +1219,8 @@ Object.defineProperty(Phaser.Sound.prototype, "volume", {
 
     set: function (value) {
 
-        //  Causes an Index size error in Firefox if you don't clamp the value
-        if (this.game.device.firefox && this.usingAudioTag)
+        //  Causes an Index size error if you don't clamp the value
+        if (this.usingAudioTag)
         {
             value = this.game.math.clamp(value, 0, 1);
         }
@@ -1185,7 +1240,7 @@ Object.defineProperty(Phaser.Sound.prototype, "volume", {
         }
         else if (this.usingAudioTag && this._sound)
         {
-            this._sound.volume = value;
+            this._sound.volume = this._globalVolume * value;
         }
     }
 

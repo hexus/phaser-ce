@@ -7,7 +7,7 @@
 *
 * Phaser - http://phaser.io
 *
-* v2.7.3 "2017-01-09" - Built: Mon Jan 09 2017 13:26:34
+* v2.8.3 "2017-07-21" - Built: Fri Jul 21 2017 07:19:01
 *
 * By Richard Davey http://www.photonstorm.com @photonstorm
 *
@@ -64,7 +64,7 @@ var PIXI = PIXI || {};
 /**
 * The base class for all objects that are rendered. Contains properties for position, scaling,
 * rotation, masks and cache handling.
-* 
+*
 * This is an abstract class and should not be used on its own, rather it should be extended.
 *
 * It is used internally by the likes of PIXI.Sprite.
@@ -76,10 +76,10 @@ PIXI.DisplayObject = function () {
 
     /**
     * The coordinates, in pixels, of this DisplayObject, relative to its parent container.
-    * 
+    *
     * The value of this property does not reflect any positioning happening further up the display list.
     * To obtain that value please see the `worldPosition` property.
-    * 
+    *
     * @property {PIXI.Point} position
     * @default
     */
@@ -88,10 +88,10 @@ PIXI.DisplayObject = function () {
     /**
     * The scale of this DisplayObject. A scale of 1:1 represents the DisplayObject
     * at its default size. A value of 0.5 would scale this DisplayObject by half, and so on.
-    * 
+    *
     * The value of this property does not reflect any scaling happening further up the display list.
     * To obtain that value please see the `worldScale` property.
-    * 
+    *
     * @property {PIXI.Point} scale
     * @default
     */
@@ -108,10 +108,10 @@ PIXI.DisplayObject = function () {
     /**
     * The rotation of this DisplayObject. The value is given, and expressed, in radians, and is based on
     * a right-handed orientation.
-    * 
+    *
     * The value of this property does not reflect any rotation happening further up the display list.
     * To obtain that value please see the `worldRotation` property.
-    * 
+    *
     * @property {number} rotation
     * @default
     */
@@ -120,10 +120,10 @@ PIXI.DisplayObject = function () {
     /**
     * The alpha value of this DisplayObject. A value of 1 is fully opaque. A value of 0 is transparent.
     * Please note that an object with an alpha value of 0 is skipped during the render pass.
-    * 
+    *
     * The value of this property does not reflect any alpha values set further up the display list.
     * To obtain that value please see the `worldAlpha` property.
-    * 
+    *
     * @property {number} alpha
     * @default
     */
@@ -134,10 +134,10 @@ PIXI.DisplayObject = function () {
     * A value of `true` makes it visible. Please note that an object with a visible value of
     * `false` is skipped during the render pass. Equally a DisplayObject with visible false will
     * not render any of its children.
-    * 
+    *
     * The value of this property does not reflect any visible values set further up the display list.
     * To obtain that value please see the `worldVisible` property.
-    * 
+    *
     * @property {boolean} visible
     * @default
     */
@@ -155,7 +155,7 @@ PIXI.DisplayObject = function () {
     /**
     * Should this DisplayObject be rendered by the renderer? An object with a renderable value of
     * `false` is skipped during the render pass.
-    * 
+    *
     * @property {boolean} renderable
     * @default
     */
@@ -166,7 +166,7 @@ PIXI.DisplayObject = function () {
     * All DisplayObjects must belong to a parent in order to be rendered.
     * The root parent is the Stage object. This property is set automatically when the
     * DisplayObject is added to, or removed from, a DisplayObjectContainer.
-    * 
+    *
     * @property {PIXI.DisplayObjectContainer} parent
     * @default
     * @readOnly
@@ -175,15 +175,15 @@ PIXI.DisplayObject = function () {
 
     /**
     * The multiplied alpha value of this DisplayObject. A value of 1 is fully opaque. A value of 0 is transparent.
-    * This value is the calculated total, based on the alpha values of all parents of this DisplayObjects 
+    * This value is the calculated total, based on the alpha values of all parents of this DisplayObjects
     * in the display list.
-    * 
+    *
     * To obtain, and set, the local alpha value, see the `alpha` property.
     *
-    * Note: This property is only updated at the end of the `updateTransform` call, once per render. Until 
+    * Note: This property is only updated at the end of the `updateTransform` call, once per render. Until
     * that happens this property will contain values based on the previous frame. Be mindful of this if
     * accessing this property outside of the normal game flow, i.e. from an asynchronous event callback.
-    * 
+    *
     * @property {number} worldAlpha
     * @readOnly
     */
@@ -191,29 +191,29 @@ PIXI.DisplayObject = function () {
 
     /**
     * The current transform of this DisplayObject.
-    * 
-    * This property contains the calculated total, based on the transforms of all parents of this 
+    *
+    * This property contains the calculated total, based on the transforms of all parents of this
     * DisplayObject in the display list.
     *
-    * Note: This property is only updated at the end of the `updateTransform` call, once per render. Until 
+    * Note: This property is only updated at the end of the `updateTransform` call, once per render. Until
     * that happens this property will contain values based on the previous frame. Be mindful of this if
     * accessing this property outside of the normal game flow, i.e. from an asynchronous event callback.
     *
-    * @property {PIXI.Matrix} worldTransform
+    * @property {Phaser.Matrix} worldTransform
     * @readOnly
     */
-    this.worldTransform = new PIXI.Matrix();
+    this.worldTransform = new Phaser.Matrix();
 
     /**
     * The coordinates, in pixels, of this DisplayObject within the world.
-    * 
-    * This property contains the calculated total, based on the positions of all parents of this 
+    *
+    * This property contains the calculated total, based on the positions of all parents of this
     * DisplayObject in the display list.
     *
-    * Note: This property is only updated at the end of the `updateTransform` call, once per render. Until 
+    * Note: This property is only updated at the end of the `updateTransform` call, once per render. Until
     * that happens this property will contain values based on the previous frame. Be mindful of this if
     * accessing this property outside of the normal game flow, i.e. from an asynchronous event callback.
-    * 
+    *
     * @property {PIXI.Point} worldPosition
     * @readOnly
     */
@@ -221,14 +221,14 @@ PIXI.DisplayObject = function () {
 
     /**
     * The global scale of this DisplayObject.
-    * 
-    * This property contains the calculated total, based on the scales of all parents of this 
+    *
+    * This property contains the calculated total, based on the scales of all parents of this
     * DisplayObject in the display list.
     *
-    * Note: This property is only updated at the end of the `updateTransform` call, once per render. Until 
+    * Note: This property is only updated at the end of the `updateTransform` call, once per render. Until
     * that happens this property will contain values based on the previous frame. Be mindful of this if
     * accessing this property outside of the normal game flow, i.e. from an asynchronous event callback.
-    * 
+    *
     * @property {PIXI.Point} worldScale
     * @readOnly
     */
@@ -236,14 +236,14 @@ PIXI.DisplayObject = function () {
 
     /**
     * The rotation, in radians, of this DisplayObject.
-    * 
-    * This property contains the calculated total, based on the rotations of all parents of this 
+    *
+    * This property contains the calculated total, based on the rotations of all parents of this
     * DisplayObject in the display list.
     *
-    * Note: This property is only updated at the end of the `updateTransform` call, once per render. Until 
+    * Note: This property is only updated at the end of the `updateTransform` call, once per render. Until
     * that happens this property will contain values based on the previous frame. Be mindful of this if
     * accessing this property outside of the normal game flow, i.e. from an asynchronous event callback.
-    * 
+    *
     * @property {number} worldRotation
     * @readOnly
     */
@@ -302,9 +302,9 @@ PIXI.DisplayObject = function () {
 
 };
 
-PIXI.DisplayObject.prototype.constructor = PIXI.DisplayObject;
-
 PIXI.DisplayObject.prototype = {
+
+    constructor: PIXI.DisplayObject,
 
     /**
     * Destroy this DisplayObject.
@@ -346,13 +346,13 @@ PIXI.DisplayObject.prototype = {
     /*
     * Updates the transform matrix this DisplayObject uses for rendering.
     *
-    * If the object has no parent, and no parent parameter is provided, it will default to 
+    * If the object has no parent, and no parent parameter is provided, it will default to
     * Phaser.Game.World as the parent transform to use. If that is unavailable the transform fails to take place.
     *
     * The `parent` parameter has priority over the actual parent. Use it as a parent override.
     * Setting it does **not** change the actual parent of this DisplayObject.
     *
-    * Calling this method updates the `worldTransform`, `worldAlpha`, `worldPosition`, `worldScale` 
+    * Calling this method updates the `worldTransform`, `worldAlpha`, `worldPosition`, `worldScale`
     * and `worldRotation` properties.
     *
     * If a `transformCallback` has been specified, it is called at the end of this method, and is passed
@@ -405,7 +405,7 @@ PIXI.DisplayObject.prototype = {
             d  =  this._cr * this.scale.y;
             tx =  this.position.x;
             ty =  this.position.y;
-            
+
             // check for pivot.. not often used so geared towards that fact!
             if (this.pivot.x || this.pivot.y)
             {
@@ -425,8 +425,9 @@ PIXI.DisplayObject.prototype = {
         {
             // lets do the fast version as we know there is no rotation..
             a  = this.scale.x;
+            b  = 0;
+            c  = 0;
             d  = this.scale.y;
-
             tx = this.position.x - this.pivot.x * a;
             ty = this.position.y - this.pivot.y * d;
 
@@ -438,11 +439,39 @@ PIXI.DisplayObject.prototype = {
             wt.ty = tx * pt.b + ty * pt.d + pt.ty;
         }
 
+        a = wt.a;
+        b = wt.b;
+        c = wt.c;
+        d = wt.d;
+
+        var determ = (a * d) - (b * c);
+
+        if (a || b)
+        {
+            var r = Math.sqrt((a * a) + (b * b));
+
+            this.worldRotation = (b > 0) ? Math.acos(a / r) : -Math.acos(a / r);
+            this.worldScale.x = r;
+            this.worldScale.y = determ / r;
+        }
+        else if (c || d)
+        {
+            var s = Math.sqrt((c * c) + (d * d));
+
+            this.worldRotation = Phaser.Math.HALF_PI - ((d > 0) ? Math.acos(-c / s) : -Math.acos(c / s));
+            this.worldScale.x = determ / s;
+            this.worldScale.y = s;
+        }
+        else
+        {
+            this.worldScale.x = 0;
+            this.worldScale.y = 0;
+        }
+
         //  Set the World values
         this.worldAlpha = this.alpha * p.worldAlpha;
-        this.worldPosition.set(wt.tx, wt.ty);
-        this.worldScale.set(this.scale.x * Math.sqrt(wt.a * wt.a + wt.c * wt.c), this.scale.y * Math.sqrt(wt.b * wt.b + wt.d * wt.d));
-        this.worldRotation = Math.atan2(-wt.c, wt.d);
+        this.worldPosition.x = wt.tx;
+        this.worldPosition.y = wt.ty;
 
         // reset the bounds each time this is called!
         this._currentBounds = null;
@@ -484,10 +513,10 @@ PIXI.DisplayObject.prototype = {
         var bounds = this.getLocalBounds();
 
         var renderTexture = new Phaser.RenderTexture(this.game, bounds.width | 0, bounds.height | 0, renderer, scaleMode, resolution);
-        
+
         PIXI.DisplayObject._tempMatrix.tx = -bounds.x;
         PIXI.DisplayObject._tempMatrix.ty = -bounds.y;
-        
+
         renderTexture.render(this, PIXI.DisplayObject._tempMatrix);
 
         return renderTexture;
@@ -588,8 +617,10 @@ PIXI.DisplayObject.prototype = {
         {
             var textureUnit = 0;
             if (this.texture && this.texture.baseTexture && PIXI._enableMultiTextureToggle)
+            {
                 textureUnit = this.texture.baseTexture.textureIndex;
-            var renderTexture = new Phaser.RenderTexture(bounds.width, bounds.height, null, null, null, textureUnit);
+            }
+            var renderTexture = new Phaser.RenderTexture(this.game, bounds.width, bounds.height, undefined, undefined, undefined, undefined, textureUnit);
             this._cachedSprite = new PIXI.Sprite(renderTexture);
             this._cachedSprite.worldTransform = this.worldTransform;
         }
@@ -734,9 +765,9 @@ Object.defineProperties(PIXI.DisplayObject.prototype, {
     * When applied it limits the visible area of this DisplayObject to the shape of the mask.
     * Under a Canvas renderer it uses shape clipping. Under a WebGL renderer it uses a Stencil Buffer.
     * To remove a mask, set this property to `null`.
-    * 
+    *
     * @name PIXI.DisplayObject#mask
-    * @property {PIXI.Graphics} mask - The mask applied to this DisplayObject. Set to `null` to remove an existing mask.
+    * @property {Phaser.Graphics} mask - The mask applied to this DisplayObject. Set to `null` to remove an existing mask.
     */
     'mask': {
 
@@ -768,12 +799,12 @@ Object.defineProperties(PIXI.DisplayObject.prototype, {
     * Sets the filters for this DisplayObject. This is a WebGL only feature, and is ignored by the Canvas
     * Renderer. A filter is a shader applied to this DisplayObject. You can modify the placement of the filter
     * using `DisplayObject.filterArea`.
-    * 
+    *
     * To remove filters, set this property to `null`.
     *
-    * Note: You cannot have a filter set, and a MULTIPLY Blend Mode active, at the same time. Setting a 
+    * Note: You cannot have a filter set, and a MULTIPLY Blend Mode active, at the same time. Setting a
     * filter will reset this DisplayObjects blend mode to NORMAL.
-    * 
+    *
     * @name PIXI.DisplayObject#filters
     * @property {Array} filters - An Array of Phaser.Filter objects, or objects that extend them.
     */
@@ -820,15 +851,15 @@ Object.defineProperties(PIXI.DisplayObject.prototype, {
     /**
     * Sets if this DisplayObject should be cached as a bitmap.
     *
-    * When invoked it will take a snapshot of the DisplayObject, as it is at that moment, and store it 
+    * When invoked it will take a snapshot of the DisplayObject, as it is at that moment, and store it
     * in a RenderTexture. This is then used whenever this DisplayObject is rendered. It can provide a
     * performance benefit for complex, but static, DisplayObjects. I.e. those with lots of children.
     *
     * Cached Bitmaps do not track their parents. If you update a property of this DisplayObject, it will not
     * re-generate the cached bitmap automatically. To do that you need to call `DisplayObject.updateCache`.
-    * 
+    *
     * To remove a cached bitmap, set this property to `null`.
-    * 
+    *
     * @name PIXI.DisplayObject#cacheAsBitmap
     * @property {boolean} cacheAsBitmap - Cache this DisplayObject as a Bitmap. Set to `null` to remove an existing cached bitmap.
     */
@@ -891,15 +922,15 @@ PIXI.DisplayObjectContainer = function () {
 
     /**
     * If `ignoreChildInput`  is `false` it will allow this objects _children_ to be considered as valid for Input events.
-    * 
+    *
     * If this property is `true` then the children will _not_ be considered as valid for Input events.
-    * 
+    *
     * Note that this property isn't recursive: only immediate children are influenced, it doesn't scan further down.
     * @property {boolean} ignoreChildInput
     * @default
     */
     this.ignoreChildInput = false;
-    
+
 };
 
 PIXI.DisplayObjectContainer.prototype = Object.create( PIXI.DisplayObject.prototype );
@@ -1031,7 +1062,7 @@ PIXI.DisplayObjectContainer.prototype.getChildAt = function (index) {
     }
 
     return this.children[index];
-    
+
 };
 
 /**
@@ -1049,7 +1080,7 @@ PIXI.DisplayObjectContainer.prototype.removeChild = function (child) {
     {
         return;
     }
-    
+
     return this.removeChildAt(index);
 
 };
@@ -1147,7 +1178,7 @@ PIXI.DisplayObjectContainer.prototype.displayObjectContainerUpdateTransform = PI
  * Retrieves the global bounds of the displayObjectContainer as a rectangle. The bounds calculation takes all visible children into consideration.
  *
  * @method getBounds
- * @param {PIXI.DisplayObject|PIXI.Matrix} [targetCoordinateSpace] Returns a rectangle that defines the area of the display object relative to the coordinate system of the targetCoordinateSpace object.
+ * @param {PIXI.DisplayObject|Phaser.Matrix} [targetCoordinateSpace] Returns a rectangle that defines the area of the display object relative to the coordinate system of the targetCoordinateSpace object.
  * @return {Rectangle} The rectangular bounding area
  */
 PIXI.DisplayObjectContainer.prototype.getBounds = function (targetCoordinateSpace) {
@@ -1155,15 +1186,15 @@ PIXI.DisplayObjectContainer.prototype.getBounds = function (targetCoordinateSpac
     var isTargetCoordinateSpaceDisplayObject = (targetCoordinateSpace && targetCoordinateSpace instanceof PIXI.DisplayObject);
     var isTargetCoordinateSpaceThisOrParent = true;
 
-    if (!isTargetCoordinateSpaceDisplayObject) 
+    if (!isTargetCoordinateSpaceDisplayObject)
 	{
         targetCoordinateSpace = this;
-    } 
-	else if (targetCoordinateSpace instanceof PIXI.DisplayObjectContainer) 
+    }
+	else if (targetCoordinateSpace instanceof PIXI.DisplayObjectContainer)
 	{
         isTargetCoordinateSpaceThisOrParent = targetCoordinateSpace.contains(this);
-    } 
-	else 
+    }
+	else
 	{
         isTargetCoordinateSpaceThisOrParent = false;
     }
@@ -1174,9 +1205,9 @@ PIXI.DisplayObjectContainer.prototype.getBounds = function (targetCoordinateSpac
     {
         var matrixCache = targetCoordinateSpace.worldTransform;
 
-        targetCoordinateSpace.worldTransform = PIXI.identityMatrix;
+        targetCoordinateSpace.worldTransform = Phaser.identityMatrix;
 
-        for (i = 0; i < targetCoordinateSpace.children.length; i++) 
+        for (i = 0; i < targetCoordinateSpace.children.length; i++)
 		{
             targetCoordinateSpace.children[i].updateTransform();
         }
@@ -1219,7 +1250,7 @@ PIXI.DisplayObjectContainer.prototype.getBounds = function (targetCoordinateSpac
 
     var bounds = this._bounds;
 
-    if (!childVisible) 
+    if (!childVisible)
 	{
         bounds = new PIXI.Rectangle();
 
@@ -1278,17 +1309,17 @@ PIXI.DisplayObjectContainer.prototype.getBounds = function (targetCoordinateSpac
     bounds.width = maxX - minX;
     bounds.height = maxY - minY;
 
-    if (isTargetCoordinateSpaceDisplayObject) 
+    if (isTargetCoordinateSpaceDisplayObject)
 	{
         targetCoordinateSpace.worldTransform = matrixCache;
 
-        for (i = 0; i < targetCoordinateSpace.children.length; i++) 
+        for (i = 0; i < targetCoordinateSpace.children.length; i++)
 		{
             targetCoordinateSpace.children[i].updateTransform();
         }
     }
 
-    if (!isTargetCoordinateSpaceThisOrParent) 
+    if (!isTargetCoordinateSpaceThisOrParent)
 	{
         var targetCoordinateSpaceBounds = targetCoordinateSpace.getBounds();
 
@@ -1325,11 +1356,11 @@ PIXI.DisplayObjectContainer.prototype.contains = function (child) {
     {
         return false;
     }
-    else if (child === this) 
+    else if (child === this)
 	{
         return true;
     }
-    else 
+    else
 	{
         return this.contains(child.parent);
     }
@@ -1339,7 +1370,7 @@ PIXI.DisplayObjectContainer.prototype.contains = function (child) {
 * Renders the object using the WebGL renderer
 *
 * @method _renderWebGL
-* @param renderSession {RenderSession} 
+* @param renderSession {RenderSession}
 * @private
 */
 PIXI.DisplayObjectContainer.prototype._renderWebGL = function (renderSession) {
@@ -1348,13 +1379,13 @@ PIXI.DisplayObjectContainer.prototype._renderWebGL = function (renderSession) {
     {
         return;
     }
-    
+
     if (this._cacheAsBitmap)
     {
         this._renderCachedSprite(renderSession);
         return;
     }
-    
+
     var i;
 
     if (this._mask || this._filters)
@@ -1383,7 +1414,7 @@ PIXI.DisplayObjectContainer.prototype._renderWebGL = function (renderSession) {
 
         if (this._mask) renderSession.maskManager.popMask(this._mask, renderSession);
         if (this._filters) renderSession.filterManager.popFilter();
-        
+
         renderSession.spriteBatch.start();
     }
     else
@@ -1401,7 +1432,7 @@ PIXI.DisplayObjectContainer.prototype._renderWebGL = function (renderSession) {
 * Renders the object using the Canvas renderer
 *
 * @method _renderCanvas
-* @param renderSession {RenderSession} 
+* @param renderSession {RenderSession}
 * @private
 */
 PIXI.DisplayObjectContainer.prototype._renderCanvas = function (renderSession) {
@@ -1447,7 +1478,7 @@ Object.defineProperty(PIXI.DisplayObjectContainer.prototype, 'width', {
     },
 
     set: function(value) {
-        
+
         var width = this.getLocalBounds().width;
 
         if (width !== 0)
@@ -1458,7 +1489,7 @@ Object.defineProperty(PIXI.DisplayObjectContainer.prototype, 'width', {
         {
             this.scale.x = 1;
         }
-        
+
         this._width = value;
     }
 });
@@ -1512,14 +1543,16 @@ PIXI.Sprite = function (texture) {
 
     /**
      * The anchor sets the origin point of the texture.
-     * The default is 0,0 this means the texture's origin is the top left
-     * Setting than anchor to 0.5,0.5 means the textures origin is centered
-     * Setting the anchor to 1,1 would mean the textures origin points will be the bottom right corner
+     * The default (0, 0) is the top left.
+     * (0.5, 0.5) is the center.
+     * (1, 1) is the bottom right.
+     *
+     * You can modify the default values in PIXI.Sprite.defaultAnchor.
      *
      * @property anchor
      * @type Point
      */
-    this.anchor = new PIXI.Point();
+    this.anchor = new PIXI.Point(PIXI.Sprite.defaultAnchor.x, PIXI.Sprite.defaultAnchor.y);
 
     /**
      * The texture that the sprite is using
@@ -1597,7 +1630,7 @@ PIXI.Sprite = function (texture) {
     this.shader = null;
 
     /**
-    * Controls if this Sprite is processed by the core Phaser game loops and Group loops.
+    * Controls if this Sprite is processed by the core Phaser game loops and Group loops (except {@link Phaser.Group#update}).
     *
     * @property exists
     * @type Boolean
@@ -1613,6 +1646,13 @@ PIXI.Sprite = function (texture) {
     this.renderable = true;
 
 };
+
+/**
+ * @property PIXI.Sprite.defaultAnchor - A Point-like object.
+ * @type {{x: number, y: number}}
+ * @default
+ */
+PIXI.Sprite.defaultAnchor = {x: 0, y: 0};
 
 // constructor
 PIXI.Sprite.prototype = Object.create(PIXI.DisplayObjectContainer.prototype);
@@ -1741,7 +1781,7 @@ PIXI.Sprite.prototype.getBounds = function(matrix)
             a *= -1;
             var temp = w0;
             w0 = -w1;
-            w1 = -temp; 
+            w1 = -temp;
         }
 
         if (d < 0)
@@ -1749,11 +1789,11 @@ PIXI.Sprite.prototype.getBounds = function(matrix)
             d *= -1;
             var temp = h0;
             h0 = -h1;
-            h1 = -temp; 
+            h1 = -temp;
         }
 
         // this means there is no rotation going on right? RIGHT?
-        // if thats the case then we can avoid checking the bound values! yay         
+        // if thats the case then we can avoid checking the bound values! yay
         minX = a * w1 + tx;
         maxX = a * w0 + tx;
         minY = d * h1 + ty;
@@ -1818,7 +1858,7 @@ PIXI.Sprite.prototype.getLocalBounds = function () {
 
     var matrixCache = this.worldTransform;
 
-    this.worldTransform = PIXI.identityMatrix;
+    this.worldTransform = Phaser.identityMatrix;
 
     for (var i = 0; i < this.children.length; i++)
     {
@@ -1988,11 +2028,11 @@ PIXI.Sprite.prototype._renderCanvas = function(renderSession, matrix)
         var c = wt.c;
         var d = wt.d;
         var e = cw;
-        
+
         // Offset before rotating
         tx = wt.c * ch + tx;
         ty = wt.d * ch + ty;
-        
+
         // Rotate matrix by 90 degrees
         // We use precalculated values for sine and cosine of rad(90)
         wt.a = a * 6.123233995736766e-17 + -c;
@@ -2036,6 +2076,9 @@ PIXI.Sprite.prototype._renderCanvas = function(renderSession, matrix)
     {
         var cx = this.texture.crop.x;
         var cy = this.texture.crop.y;
+
+        cw = Math.floor(cw)
+        ch = Math.floor(ch)
 
         renderSession.context.drawImage(this.texture.baseTexture.source, cx, cy, cw, ch, dx, dy, cw / resolution, ch / resolution);
     }
@@ -2225,12 +2268,12 @@ PIXI.PixiShader.prototype.constructor = PIXI.PixiShader;
 PIXI.PixiShader.prototype.initMultitexShader = function () {
     var gl = this.gl;
     this.MAX_TEXTURES = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
-    var dynamicIfs = '\tif (vTextureIndex == 0.0) gl_FragColor = texture2D(uSamplerArray[0], vTextureCoord) * vColor;\n'
+    var dynamicIfs = '\tif (vTextureIndex == 0.0) { gl_FragColor = texture2D(uSamplerArray[0], vTextureCoord) * vColor;return;}\n'
     for (var index = 1; index < this.MAX_TEXTURES; ++index)
     {
-        dynamicIfs += '\telse if (vTextureIndex == ' + 
-                    index + '.0) gl_FragColor = texture2D(uSamplerArray[' + 
-                    index + '], vTextureCoord) * vColor;\n'
+        dynamicIfs += '\tif (vTextureIndex == ' + 
+                    index + '.0) {gl_FragColor = texture2D(uSamplerArray[' + 
+                    index + '], vTextureCoord) * vColor;return;}\n'
     }
     this.fragmentSrc = [
         '// PixiShader Fragment Shader.',
@@ -2248,8 +2291,8 @@ PIXI.PixiShader.prototype.initMultitexShader = function () {
         'const vec4 RED = vec4(1.0, 0.0, 0.0, 1.0);',
         'void main(void) {',
         dynamicIfs,
-        '   else if(vTextureIndex >= ' + this.MAX_TEXTURES + '.0) gl_FragColor = BLUE;',
-        '   else if(isnan(vTextureIndex)) gl_FragColor = RED;',
+        '   if(vTextureIndex >= ' + this.MAX_TEXTURES + '.0) { gl_FragColor = BLUE;return;}',
+        '   if(isnan(vTextureIndex)) { gl_FragColor = RED;return;}',
         '}'
     ];
 
@@ -2680,12 +2723,12 @@ PIXI.PixiFastShader = function (gl) {
     if (PIXI._enableMultiTextureToggle) {
         var gl = this.gl;
         this.MAX_TEXTURES = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
-        var dynamicIfs = '\tif (vTextureIndex == 0.0) gl_FragColor = texture2D(uSamplerArray[0], vTextureCoord) * vColor;\n'
+        var dynamicIfs = '\tif (vTextureIndex == 0.0) { gl_FragColor = texture2D(uSamplerArray[0], vTextureCoord) * vColor;return;}\n'
         for (var index = 1; index < this.MAX_TEXTURES; ++index)
         {
-            dynamicIfs += '\telse if (vTextureIndex == ' + 
-                        index + '.0) gl_FragColor = texture2D(uSamplerArray[' + 
-                        index + '], vTextureCoord) * vColor;\n'
+            dynamicIfs += '\tif (vTextureIndex == ' + 
+                        index + '.0) { gl_FragColor = texture2D(uSamplerArray[' + 
+                        index + '], vTextureCoord) * vColor;return;}\n'
         }
 
         /**
@@ -2709,8 +2752,8 @@ PIXI.PixiFastShader = function (gl) {
             'const vec4 RED = vec4(1.0, 0.0, 0.0, 1.0);',
             'void main(void) {',
             dynamicIfs,
-            '   else if(vTextureIndex >= ' + this.MAX_TEXTURES + '.0) gl_FragColor = BLUE;',
-            '   else if(isnan(vTextureIndex)) gl_FragColor = RED;',       
+            '   if(vTextureIndex >= ' + this.MAX_TEXTURES + '.0) { gl_FragColor = BLUE;return;}',
+            '   if(isnan(vTextureIndex)) {gl_FragColor = RED;return;}',       
             '}'
         ];
     } else {
@@ -2899,12 +2942,12 @@ PIXI.StripShader = function(gl)
     if (PIXI._enableMultiTextureToggle) {
         var gl = this.gl;
         this.MAX_TEXTURES = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
-        var dynamicIfs = '\tif (vTextureIndex == 0.0) gl_FragColor = texture2D(uSamplerArray[0], vTextureCoord);\n'
+        var dynamicIfs = '\tif (vTextureIndex == 0.0) { gl_FragColor = texture2D(uSamplerArray[0], vTextureCoord);return;}\n'
         for (var index = 1; index < this.MAX_TEXTURES; ++index)
         {
-            dynamicIfs += '\telse if (vTextureIndex == ' + 
-                        index + '.0) gl_FragColor = texture2D(uSamplerArray[' + 
-                        index + '], vTextureCoord) ;\n'
+            dynamicIfs += '\tif (vTextureIndex == ' + 
+                        index + '.0) { gl_FragColor = texture2D(uSamplerArray[' + 
+                        index + '], vTextureCoord) ;return;}\n'
         }
 
 
@@ -2930,8 +2973,8 @@ PIXI.StripShader = function(gl)
             'const vec4 RED = vec4(1.0, 0.0, 0.0, 1.0);',
             'void main(void) {',
             dynamicIfs,
-            '   else if(vTextureIndex >= ' + this.MAX_TEXTURES + '.0) gl_FragColor = BLUE;',
-            '   else if(isnan(vTextureIndex)) gl_FragColor = RED;',
+            '   if(vTextureIndex >= ' + this.MAX_TEXTURES + '.0) { gl_FragColor = BLUE;return;}',
+            '   if(isnan(vTextureIndex)) {gl_FragColor = RED;return;}',
             '}'
         ];    
     } else {
@@ -3486,6 +3529,7 @@ PIXI.WebGLRenderer = function(game) {
     this.renderSession.game = this.game;
     this.renderSession.gl = this.gl;
     this.renderSession.drawCount = 0;
+    this.renderSession.flushCount = 0;
     this.renderSession.shaderManager = this.shaderManager;
     this.renderSession.maskManager = this.maskManager;
     this.renderSession.filterManager = this.filterManager;
@@ -3494,6 +3538,7 @@ PIXI.WebGLRenderer = function(game) {
     this.renderSession.stencilManager = this.stencilManager;
     this.renderSession.renderer = this;
     this.renderSession.resolution = this.resolution;
+    this.renderSession.maxTextureAvailableSpace = null; // filled in setTexturePriority()
 
     // time init the context..
     this.initContext();
@@ -3521,6 +3566,7 @@ PIXI.WebGLRenderer.prototype.initContext = function()
     }
 
     this.maxTextures = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
+    this.maxTextureSize = this.gl.getParameter(gl.MAX_TEXTURE_SIZE);
 
     this.glContextId = gl.id = PIXI.WebGLRenderer.glContextId++;
 
@@ -3549,13 +3595,13 @@ PIXI.WebGLRenderer.prototype.initContext = function()
     // Load WebGL extension
     this.extensions.compression = {};
 
-    etc1 = gl.getExtension('WEBGL_compressed_texture_etc1') || gl.getExtension('WEBKIT_WEBGL_compressed_texture_etc1');
-    pvrtc = gl.getExtension('WEBGL_compressed_texture_pvrtc') || gl.getExtension('WEBKIT_WEBGL_compressed_texture_pvrtc');
-    s3tc = gl.getExtension('WEBGL_compressed_texture_s3tc') || gl.getExtension('WEBKIT_WEBGL_compressed_texture_s3tc');
+    var etc1 = gl.getExtension('WEBGL_compressed_texture_etc1') || gl.getExtension('WEBKIT_WEBGL_compressed_texture_etc1');
+    var pvrtc = gl.getExtension('WEBGL_compressed_texture_pvrtc') || gl.getExtension('WEBKIT_WEBGL_compressed_texture_pvrtc');
+    var s3tc = gl.getExtension('WEBGL_compressed_texture_s3tc') || gl.getExtension('WEBKIT_WEBGL_compressed_texture_s3tc');
 
-    if (etc1) this.extensions.compression.ETC1 = etc1;
-    if (pvrtc) this.extensions.compression.PVRTC = pvrtc;
-    if (s3tc) this.extensions.compression.S3TC = s3tc;
+    if (etc1) { this.extensions.compression.ETC1 = etc1; }
+    if (pvrtc) { this.extensions.compression.PVRTC = pvrtc; }
+    if (s3tc) { this.extensions.compression.S3TC = s3tc; }
 };
 
 /**
@@ -3574,9 +3620,9 @@ PIXI.WebGLRenderer.prototype.initContext = function()
 *
 * To change the textures being batched, call this method with a new array of image keys. The old ones
 * will all be purged out and no-longer batched, and the new ones enabled.
-* 
+*
 * Note: Throws a warning if you haven't enabled Multiple Texture batching support in the Phaser Game config.
-* 
+*
 * @method setTexturePriority
 * @param textureNameCollection {Array} An Array of Texture Cache keys to use for multi-texture batching.
 * @return {Array} An array containing the texture keys that were enabled for batching.
@@ -3608,24 +3654,26 @@ PIXI.WebGLRenderer.prototype.setTexturePriority = function (textureNameCollectio
     //  deal with that in their own way.
     for (var i = 0; i < this.currentBatchedTextures.length; i++)
     {
-        imageName = textureNameCollection[index];
+        imageName = this.currentBatchedTextures[i];
 
         if (!(imageName in imageCache))
         {
+            console.warn('setTexturePriority: There is no image "%s" in the image cache.', imageName);
             continue;
         }
-        
+
         imageCache[imageName].base.textureIndex = 0;
     }
     var maxTextureAvailableSpace = (maxTextureSize) - clampPot(Math.max(this.width, this.height));
     this.currentBatchedTextures.length = 0;
     // We start from 1 because framebuffer texture uses unit 0.
-    for (var index = 0; index < textureNameCollection.length; ++index)
+    for (var j = 0; j < textureNameCollection.length; ++j)
     {
-        imageName = textureNameCollection[index];
+        imageName = textureNameCollection[j];
 
         if (!(imageName in imageCache))
         {
+            console.warn('setTexturePriority: There is no image "%s" in the image cache.', imageName);
             continue;
         }
         // Unit 0 is reserved for Pixi's framebuffer
@@ -3633,11 +3681,15 @@ PIXI.WebGLRenderer.prototype.setTexturePriority = function (textureNameCollectio
         maxTextureAvailableSpace -= clampPot(Math.max(base.width, base.height));
         if (maxTextureAvailableSpace <= 0) {
             base.textureIndex = 0;
+            console.warn('setTexturePriority: Image "%s" was given textureIndex=0 because there is no available texture space (%s).',
+                imageName, maxTextureAvailableSpace);
         } else {
-            base.textureIndex = (1 + (index % (maxTextures - 1)));
+            base.textureIndex = (1 + (j % (maxTextures - 1)));
         }
         this.currentBatchedTextures.push(imageName);
     }
+
+    this.renderSession.maxTextureAvailableSpace = maxTextureAvailableSpace;
 
     return this.currentBatchedTextures;
 
@@ -3692,6 +3744,7 @@ PIXI.WebGLRenderer.prototype.renderDisplayObject = function(displayObject, proje
 
     // reset the render session data..
     this.renderSession.drawCount = 0;
+    this.renderSession.flushCount = 0;
 
     // make sure to flip the Y if using a render texture..
     this.renderSession.flipY = buffer ? -1 : 1;
@@ -3765,12 +3818,12 @@ PIXI.WebGLRenderer.prototype.updateCompressedTexture = function (texture) {
     gl.bindTexture(gl.TEXTURE_2D, texture._glTextures[gl.id]);
 
     gl.compressedTexImage2D(
-        gl.TEXTURE_2D, 
-        0, 
-        textureMetaData.glExtensionFormat, 
-        textureMetaData.width, 
-        textureMetaData.height, 
-        0, 
+        gl.TEXTURE_2D,
+        0,
+        textureMetaData.glExtensionFormat,
+        textureMetaData.width,
+        textureMetaData.height,
+        0,
         textureMetaData.textureData
     );
 
@@ -3940,6 +3993,7 @@ PIXI.enableMultiTexture = function() {
 
 PIXI.WebGLRenderer.glContextId = 0;
 PIXI.WebGLRenderer.textureArray = [];
+
 /**
  * @author Mat Groves http://matgroves.com/ @Doormat23
  */
@@ -4427,14 +4481,14 @@ PIXI.WebGLShaderManager.prototype.constructor = PIXI.WebGLShaderManager;
 
 /**
 * Initialises the context and the properties.
-* 
-* @method setContext 
+*
+* @method setContext
 * @param gl {WebGLContext} the current WebGL drawing context
 */
 PIXI.WebGLShaderManager.prototype.setContext = function(gl)
 {
     this.gl = gl;
-    
+
     // the next one is used for rendering primitives
     this.primitiveShader = new PIXI.PrimitiveShader(gl);
 
@@ -4450,14 +4504,17 @@ PIXI.WebGLShaderManager.prototype.setContext = function(gl)
     // the next one is used for rendering triangle strips
     this.stripShader = new PIXI.StripShader(gl);
 
+    // the next one is used for rendering creature meshes
+    this.creatureShader = PIXI.CreatureShader ? new PIXI.CreatureShader(gl) : null;
+
     this.setShader(this.defaultShader);
 };
 
 /**
 * Takes the attributes given in parameters.
-* 
+*
 * @method setAttribs
-* @param attribs {Array} attribs 
+* @param attribs {Array} attribs
 */
 PIXI.WebGLShaderManager.prototype.setAttribs = function(attribs)
 {
@@ -4498,14 +4555,14 @@ PIXI.WebGLShaderManager.prototype.setAttribs = function(attribs)
 
 /**
 * Sets the current shader.
-* 
+*
 * @method setShader
 * @param shader {Any}
 */
 PIXI.WebGLShaderManager.prototype.setShader = function(shader)
 {
     if(this._currentId === shader._UID)return false;
-    
+
     this._currentId = shader._UID;
 
     this.currentShader = shader;
@@ -4518,7 +4575,7 @@ PIXI.WebGLShaderManager.prototype.setShader = function(shader)
 
 /**
 * Destroys this object.
-* 
+*
 * @method destroy
 */
 PIXI.WebGLShaderManager.prototype.destroy = function()
@@ -4537,16 +4594,20 @@ PIXI.WebGLShaderManager.prototype.destroy = function()
 
     this.stripShader.destroy();
 
+    if (this.creatureShader) {
+      this.creatureShader.destroy();
+    }
+
     this.gl = null;
 };
 
 /**
  * @author Mat Groves
- * 
+ *
  * Big thanks to the very clever Matt DesLauriers <mattdesl> https://github.com/mattdesl/
  * for creating the original pixi version!
  * Also a thanks to https://github.com/bchevalier for tweaking the tint and alpha so that they now share 4 bytes on the vertex buffer
- * 
+ *
  * Heavily inspired by LibGDX's WebGLSpriteBatch:
  * https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/graphics/g2d/WebGLSpriteBatch.java
  */
@@ -4697,11 +4758,11 @@ PIXI.WebGLSpriteBatch.prototype.setContext = function (gl) {
     this.MAX_TEXTURES = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
     this.gl = gl;
     if (PIXI._enableMultiTextureToggle) {
-        var dynamicIfs = '\tif (vTextureIndex == 0.0) gl_FragColor = texture2D(uSamplerArray[0], vTextureCoord) * vColor;\n'
+        var dynamicIfs = '\tif (vTextureIndex == 0.0) {gl_FragColor = texture2D(uSamplerArray[0], vTextureCoord) * vColor;return;}\n'
         for (var index = 1; index < this.MAX_TEXTURES; ++index) {
-            dynamicIfs += '\telse if (vTextureIndex == ' +
-                index + '.0) gl_FragColor = texture2D(uSamplerArray[' +
-                index + '], vTextureCoord) * vColor;\n'
+            dynamicIfs += '\tif (vTextureIndex == ' +
+                index + '.0) {gl_FragColor = texture2D(uSamplerArray[' +
+                index + '], vTextureCoord) * vColor;return;}\n'
         }
         this.defaultShader = new Phaser.Filter(
             this.game,
@@ -4715,7 +4776,7 @@ PIXI.WebGLSpriteBatch.prototype.setContext = function (gl) {
                 'uniform sampler2D uSamplerArray[' + this.MAX_TEXTURES + '];',
                 'void main(void) {',
                     dynamicIfs,
-                    '\telse gl_FragColor = texture2D(uSamplerArray[0], vTextureCoord) * vColor;',
+                    '\tgl_FragColor = texture2D(uSamplerArray[0], vTextureCoord) * vColor;',
                 '}'
             ]);
     }
@@ -4865,7 +4926,7 @@ PIXI.WebGLSpriteBatch.prototype.render = function (sprite, matrix) {
         // Offset before rotating
         tx = wt.c * ch + tx;
         ty = wt.d * ch + ty;
-        
+
         // Rotate matrix by 90 degrees
         // We use precalculated values for sine and cosine of rad(90)
         a = a0 * 6.123233995736766e-17 + -c0;
@@ -4880,7 +4941,7 @@ PIXI.WebGLSpriteBatch.prototype.render = function (sprite, matrix) {
         w0 = h0;
         w1 = h1;
         h0 = _w0;
-        h1 = _w1;   
+        h1 = _w1;
     }
 
     var colors = this.colors;
@@ -4951,7 +5012,7 @@ PIXI.WebGLSpriteBatch.prototype.render = function (sprite, matrix) {
 
 /**
  * Renders a TilingSprite using the spriteBatch.
- * 
+ *
  * @method renderTilingSprite
  * @param sprite {TilingSprite} the sprite to render
  */
@@ -5126,7 +5187,7 @@ PIXI.WebGLSpriteBatch.prototype.flush = function () {
         gl.vertexAttribPointer(shader.aTextureIndex, 1, gl.FLOAT, false, stride, 20);
     }
 
-    // upload the verts to the buffer  
+    // upload the verts to the buffer
     if (this.currentBatchSize > (this.size * 0.5)) {
         gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.vertices);
     } else {
@@ -5226,6 +5287,7 @@ PIXI.WebGLSpriteBatch.prototype.flush = function () {
 
     // then reset the batch!
     this.currentBatchSize = 0;
+    this.renderSession.flushCount++;
 };
 
 /**
@@ -5247,7 +5309,10 @@ PIXI.WebGLSpriteBatch.prototype.renderBatch = function (texture, size, startInde
             //  If updateTexture returns false then we cannot render it, so bail out now
             return;
         }
+    }else {
+        gl.bindTexture(gl.TEXTURE_2D, texture._glTextures[gl.id]);
     }
+
     gl.drawElements(gl.TRIANGLES, size * 6, gl.UNSIGNED_SHORT, startIndex * 6 * 2);
     // increment the draw count
     this.renderSession.drawCount++;
@@ -5270,7 +5335,7 @@ PIXI.WebGLSpriteBatch.prototype.start = function () {
 
 /**
  * Destroys the SpriteBatch.
- * 
+ *
  * @method destroy
  */
 PIXI.WebGLSpriteBatch.prototype.destroy = function () {
@@ -5683,6 +5748,8 @@ PIXI.WebGLFastSpriteBatch.prototype.flush = function()
 
     // increment the draw count
     this.renderSession.drawCount++;
+    this.renderSession.flushCount++;
+
 };
 
 

@@ -34,12 +34,25 @@
 * game.state.add('MainMenu', BasicGame.MainMenu);
 * game.state.add('Game', BasicGame.Game);
 * game.state.start('Boot');
-* 
+*
 * ```
 * In the example above, 4 States are added to the State Manager, and Phaser is told to
 * start running the `Boot` state when it has finished initializing. There are example
 * project templates you can use in the Phaser GitHub repo, inside the `resources` folder.
 *
+* @class Phaser.Game
+* @constructor
+* @param {number|string} [width=800] - The width of your game in game pixels. If given as a string the value must be between 0 and 100 and will be used as the percentage width of the parent container, or the browser window if no parent is given.
+* @param {number|string} [height=600] - The height of your game in game pixels. If given as a string the value must be between 0 and 100 and will be used as the percentage height of the parent container, or the browser window if no parent is given.
+* @param {number} [renderer=Phaser.AUTO] - Which renderer to use: Phaser.AUTO will auto-detect, Phaser.WEBGL, Phaser.WEBGL_MULTI, Phaser.CANVAS or Phaser.HEADLESS (no rendering at all).
+* @param {string|HTMLElement} [parent=''] - The DOM element into which this games canvas will be injected. Either a DOM ID (string) or the element itself.
+* @param {object} [state=null] - The default state object. A object consisting of Phaser.State functions (preload, create, update, render) or null.
+* @param {boolean} [transparent=false] - Use a transparent canvas background or not.
+* @param {boolean} [antialias=true] - Draw all image textures anti-aliased or not. The default is for smooth textures, but disable if your game features pixel art.
+* @param {object} [physicsConfig=null] - A physics configuration object to pass to the Physics world on creation.
+*/
+
+/**
 * Instead of specifying arguments you can also pass a single object instead:
 *
 * ```
@@ -61,14 +74,23 @@
 *
 * @class Phaser.Game
 * @constructor
-* @param {number|string} [width=800] - The width of your game in game pixels. If given as a string the value must be between 0 and 100 and will be used as the percentage width of the parent container, or the browser window if no parent is given.
-* @param {number|string} [height=600] - The height of your game in game pixels. If given as a string the value must be between 0 and 100 and will be used as the percentage height of the parent container, or the browser window if no parent is given.
-* @param {number} [renderer=Phaser.AUTO] - Which renderer to use: Phaser.AUTO will auto-detect, Phaser.WEBGL, Phaser.WEBGL_MULTI, Phaser.CANVAS or Phaser.HEADLESS (no rendering at all).
-* @param {string|HTMLElement} [parent=''] - The DOM element into which this games canvas will be injected. Either a DOM ID (string) or the element itself.
-* @param {object} [state=null] - The default state object. A object consisting of Phaser.State functions (preload, create, update, render) or null.
-* @param {boolean} [transparent=false] - Use a transparent canvas background or not.
-* @param {boolean} [antialias=true] - Draw all image textures anti-aliased or not. The default is for smooth textures, but disable if your game features pixel art.
-* @param {object} [physicsConfig=null] - A physics configuration object to pass to the Physics world on creation.
+* @param {object} [config] - A single configuration object
+* @param {number|string} [config.antialias=true]
+* @param {number|string} [config.height=600]
+* @param {boolean} [config.enableDebug=true] - Enable {@link Phaser.Utils.Debug}. You can gain a little performance by disabling this in production.
+* @param {number} [config.fullScreenScaleMode] - The scaling method used by the ScaleManager when in fullscreen.
+* @param {DOMElement} [config.fullScreenTarget] - The DOM element on which the Fullscreen API enter request will be invoked.
+* @param {boolean} [config.multiTexture=false] - Enable support for multiple bound Textures in WebGL. Same as `renderer: Phaser.WEBGL_MULTI`.
+* @param {string|HTMLElement} [config.parent='']
+* @param {object} [config.physicsConfig=null]
+* @param {boolean} [config.preserveDrawingBuffer=false] - Whether or not the contents of the stencil buffer is retained after rendering.
+* @param {number} [config.renderer=Phaser.AUTO]
+* @param {number} [config.resolution=1] - The resolution of your game, as a ratio of canvas pixels to game pixels.
+* @param {number} [config.scaleMode] - The scaling method used by the ScaleManager when not in fullscreen.
+* @param {number} [config.seed] - Seed for {@link Phaser.RandomDataGenerator}.
+* @param {object} [config.state=null]
+* @param {boolean} [config.transparent=false]
+* @param {number|string} [config.width=800]
 */
 Phaser.Game = function (width, height, renderer, parent, state, transparent, antialias, physicsConfig) {
 
@@ -89,7 +111,8 @@ Phaser.Game = function (width, height, renderer, parent, state, transparent, ant
     this.physicsConfig = physicsConfig;
 
     /**
-    * @property {string|HTMLElement} parent - The Games DOM parent.
+    * @property {string|HTMLElement} parent - The Game's DOM parent (or name thereof), if any, as set when the game was created. The actual parent can be found in `game.canvas.parentNode`. Setting this has no effect after {@link Phaser.ScaleManager} is booted.
+    * @readonly
     * @default
     */
     this.parent = '';
@@ -117,7 +140,7 @@ Phaser.Game = function (width, height, renderer, parent, state, transparent, ant
     this.height = 600;
 
     /**
-    * The resolution of your game. This value is read only, but can be changed at start time it via a game configuration object.
+    * The resolution of your game, as a ratio of canvas pixels to game pixels. This value is read only, but can be changed at start time it via a game configuration object.
     *
     * @property {integer} resolution
     * @readonly
@@ -144,7 +167,8 @@ Phaser.Game = function (width, height, renderer, parent, state, transparent, ant
     this.transparent = false;
 
     /**
-    * @property {boolean} antialias - Anti-alias graphics. By default scaled images are smoothed in Canvas and WebGL, set anti-alias to false to disable this globally.
+    * @property {boolean} antialias - Anti-alias graphics (as set when the Game is created). By default scaled and rotated images are smoothed in Canvas and WebGL; set `antialias` to false to disable this globally. After the game boots, use `game.stage.smoothed` instead.
+    * @readonly
     * @default
     */
     this.antialias = true;
@@ -155,10 +179,10 @@ Phaser.Game = function (width, height, renderer, parent, state, transparent, ant
     * Configuration object with the property `multiTexture` set to true. It has to be enabled before
     * Pixi boots, and cannot be changed after the game is running. Once enabled, take advantage of it
     * via the `game.renderer.setTexturePriority` method.
-    * 
+    *
     * @property {boolean} multiTexture
+    * @readonly
     * @default
-    * @readOnly
     */
     this.multiTexture = false;
 
@@ -183,7 +207,7 @@ Phaser.Game = function (width, height, renderer, parent, state, transparent, ant
     this.renderer = null;
 
     /**
-    * @property {number} renderType - The Renderer this game will use. Either Phaser.AUTO, Phaser.CANVAS, Phaser.WEBGL, Phaser.WEBGL_MULTI or Phaser.HEADLESS.
+    * @property {number} renderType - The Renderer this game will use. Either Phaser.AUTO, Phaser.CANVAS, Phaser.WEBGL, Phaser.WEBGL_MULTI or Phaser.HEADLESS. After the game boots, renderType reflects the renderer in use: AUTO changes to CANVAS or WEBGL and WEBGL_MULTI changes to WEBGL. HEADLESS skips `render` hooks but not `preRender` or `postRender`; set {@link lockRender} to skip those as well.
     * @readonly
     */
     this.renderType = Phaser.AUTO;
@@ -280,7 +304,7 @@ Phaser.Game = function (width, height, renderer, parent, state, transparent, ant
     * @property {Phaser.Physics} physics - Reference to the physics manager.
     */
     this.physics = null;
-    
+
     /**
     * @property {Phaser.PluginManager} plugins - Reference to the plugin manager.
     */
@@ -436,7 +460,7 @@ Phaser.Game = function (width, height, renderer, parent, state, transparent, ant
     this.fpsProblemNotifier = new Phaser.Signal();
 
     /**
-    * @property {boolean} forceSingleUpdate - Should the game loop force a logic update, regardless of the delta timer? Set to true if you know you need this. You can toggle it on the fly.
+    * @property {boolean} forceSingleUpdate - Should the game loop force a logic update, regardless of the delta timer? You can toggle it on the fly.
     */
     this.forceSingleUpdate = true;
 
@@ -642,7 +666,7 @@ Phaser.Game.prototype = {
         }
         else
         {
-            this.debug = { preUpdate: function () {}, update: function () {}, reset: function () {} };
+            this.debug = { preUpdate: function () {}, update: function () {}, reset: function () {}, isDisabled: true };
         }
 
         this.showDebugHeader();
@@ -706,7 +730,7 @@ Phaser.Game.prototype = {
             c++;
         }
 
-        if (this.device.chrome)
+        if (!this.device.ie) // https://developer.mozilla.org/en-US/docs/Web/API/Console/log#Browser_compatibility
         {
             var args = [
                 '%c %c %c Phaser CE v' + v + ' | Pixi.js | ' + r + ' | ' + a + '  %c %c ' + '%c http://phaser.io %c\u2665%c\u2665%c\u2665',
@@ -769,12 +793,13 @@ Phaser.Game.prototype = {
         {
             if (this.device.canvas)
             {
-                //  They requested Canvas and their browser supports it
-                this.renderType = Phaser.CANVAS;
-
                 this.renderer = new PIXI.CanvasRenderer(this);
 
                 this.context = this.renderer.context;
+
+                if (this.renderType === Phaser.AUTO) {
+                    this.renderType = Phaser.CANVAS;
+                }
             }
             else
             {
@@ -788,6 +813,8 @@ Phaser.Game.prototype = {
             if (this.multiTexture || this.renderType === Phaser.WEBGL_MULTI)
             {
                 PIXI.enableMultiTexture();
+
+                this.multiTexture = true;
             }
 
             this.renderType = Phaser.WEBGL;
@@ -808,7 +835,7 @@ Phaser.Game.prototype = {
         if (this.renderType !== Phaser.HEADLESS)
         {
             this.stage.smoothed = this.antialias;
-            
+
             Phaser.Canvas.addToDOM(this.canvas, this.parent, false);
             Phaser.Canvas.setTouchAction(this.canvas);
         }
@@ -976,7 +1003,6 @@ Phaser.Game.prototype = {
             this.sound.update();
             this.input.update();
             this.physics.update();
-            this.particles.update();
             this.plugins.update();
 
             this.stage.postUpdate();
@@ -986,7 +1012,7 @@ Phaser.Game.prototype = {
         {
             // Scaling and device orientation changes are still reflected when paused.
             this.scale.pauseUpdate();
-            this.state.pauseUpdate();
+            this.state.pauseUpdate(timeStep);
             this.debug.preUpdate();
         }
 
@@ -1084,6 +1110,11 @@ Phaser.Game.prototype = {
 
         this.raf.stop();
 
+        if (this.debug.destroy)
+        {
+            this.debug.destroy();
+        }
+
         this.state.destroy();
         this.sound.destroy();
         this.scale.destroy();
@@ -1092,6 +1123,7 @@ Phaser.Game.prototype = {
         this.physics.destroy();
         this.plugins.destroy();
 
+        this.debug = null;
         this.state = null;
         this.sound = null;
         this.scale = null;
@@ -1266,9 +1298,9 @@ Object.defineProperty(Phaser.Game.prototype, "paused", {
 });
 
 /**
- * 
+ *
  * "Deleted code is debugged code." - Jeff Sickel
  *
  * ヽ(〃＾▽＾〃)ﾉ
- * 
+ *
 */

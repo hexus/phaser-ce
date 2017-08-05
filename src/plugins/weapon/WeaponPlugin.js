@@ -222,7 +222,7 @@ Phaser.Weapon = function (game, parent) {
 
     /**
      * Private var that holds the public `bulletClass` property.
-     * @type {object}
+     * @type {function}
      * @private
      */
     this._bulletClass = Phaser.Bullet;
@@ -876,7 +876,7 @@ Phaser.Weapon.prototype.fire = function (from, x, y, offsetX, offsetY) {
         if (this.trackRotation)
         {
             this._rotatedPoint.set(this.trackedSprite.world.x + this.trackOffset.x, this.trackedSprite.world.y + this.trackOffset.y);
-            this._rotatedPoint.rotate(this.trackedSprite.world.x, this.trackedSprite.world.y, this.trackedSprite.rotation);
+            this._rotatedPoint.rotate(this.trackedSprite.world.x, this.trackedSprite.world.y, this.trackedSprite.worldRotation);
 
             if (this.fireFrom.width > 1)
             {
@@ -1273,11 +1273,13 @@ Phaser.Weapon.prototype.debug = function (x, y, debugBodies) {
 };
 
 /**
-* The Class of the bullets that are launched by this Weapon. Defaults `Phaser.Bullet`, but can be
+* The Class of the bullets that are launched by this Weapon. Defaults to {@link Phaser.Bullet}, but can be
 * overridden before calling `createBullets` and set to your own class type.
 *
+* It should be a constructor function accepting `(game, x, y, key, frame)`.
+*
 * @name Phaser.Weapon#bulletClass
-* @property {Object} bulletClass
+* @property {function} bulletClass
 */
 Object.defineProperty(Phaser.Weapon.prototype, "bulletClass", {
 
@@ -1291,7 +1293,7 @@ Object.defineProperty(Phaser.Weapon.prototype, "bulletClass", {
 
         this._bulletClass = classType;
 
-        //prevent crash if weapon's bullets have not yet been initialized
+        // `this.bullets` exists only after createBullets()
         if (this.bullets) {
             this.bullets.classType = this._bulletClass;
         }

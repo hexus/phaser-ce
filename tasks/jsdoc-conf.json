@@ -3,28 +3,30 @@
         "allowUnknownTags": true
     },
     "source": {
-        "include": [ 
-            "./docs/pixi-jsdoc.js",
-            "./src/Phaser.js", 
-            "./src/animation/", 
-            "./src/core/", 
-            "./src/gameobjects/", 
-            "./src/geom/", 
-            "./src/input/", 
-            "./src/loader/", 
-            "./src/math/", 
-            "./src/net/", 
-            "./src/particles/", 
-            "./src/physics/", 
-            "./src/plugins/", 
-            "./src/sound/", 
-            "./src/tilemap/", 
-            "./src/time/", 
+        "include": [
+            "./src/Phaser.js",
+            "./src/animation/",
+            "./src/core/",
+            "./src/gameobjects/",
+            "./src/geom/",
+            "./src/input/",
+            "./src/loader/",
+            "./src/math/",
+            "./src/net/",
+            "./src/particles/",
+            "./src/physics/",
+            "./src/pixi/",
+            "./src/plugins/",
+            "./src/sound/",
+            "./src/tilemap/",
+            "./src/time/",
             "./src/tween/",
             "./src/utils/"
         ],
         "exclude": [
             "./src/physics/p2/p2.js",
+            "./src/pixi/Intro.js",
+            "./src/pixi/Outro.js",
             "./src/animation/creature/"
         ],
         "includePattern": ".+\\.js(doc)?$",
@@ -32,7 +34,6 @@
     },
     "plugins": [
         "./tasks/jsdoc-plugins/namealias",
-        "./tasks/jsdoc-plugins/filterpixi",
         "./tasks/jsdoc-plugins/proptomember",
         "./tasks/jsdoc-plugins/sourceproxy",
         "./tasks/jsdoc-plugins/shortlinks",
@@ -42,9 +43,10 @@
         "cleverLinks"     : false,
         "monospaceLinks"  : false,
         "default"         : {
-            "outputSourceFiles" : true
+            "outputSourceFiles" : false,
+            "outputSourcePath"  : false
         },
-        "systemName"      : "Phaser",
+        "systemName"      : "Phaser CE",
         "footer"          : "",
         "copyright"       : "Phaser Copyright © 2012-2016 Photon Storm Ltd.",
         "navType"         : "vertical",
@@ -55,7 +57,7 @@
     },
     "markdown"  : {
         "parser"   : "gfm",
-        "hardwrap" : true
+        "hardwrap" : false
     },
     "opts": {
         "encoding": "utf8",
@@ -63,7 +65,8 @@
         "private": false,
         "lenient": true,
         "destination": "./docs",
-        "template": "./resources/docstrap-master/template"
-
+        "template": "./resources/docstrap-master/template",
+        "readme": "./DOCS.md",
+        "mainpagetitle": "API"
     }
 }

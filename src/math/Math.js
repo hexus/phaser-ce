@@ -24,6 +24,13 @@ Phaser.Math = {
     PI2: Math.PI * 2,
 
     /**
+     * Half PI.
+     * @property {number} Phaser.Math#HALF_PI
+     * @default ~1.570
+     */
+    HALF_PI: Math.PI * 0.5,
+
+    /**
     * Degrees to Radians factor.
     * @property {number} Phaser.Math#DEG_TO_RAD
     */
@@ -123,7 +130,7 @@ Phaser.Math = {
             return min;
         }
 
-        if (min < max)
+        if (min > max)
         {
             var temp = min;
             min = max;
@@ -153,7 +160,7 @@ Phaser.Math = {
             return min;
         }
 
-        if (min < max)
+        if (min > max)
         {
             var temp = min;
             min = max;

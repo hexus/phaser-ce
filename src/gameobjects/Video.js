@@ -299,7 +299,7 @@ Phaser.Video = function (game, key, url) {
         this.snapshot = new Phaser.BitmapData(this.game, '', this.width, this.height);
     }
 
-    if (!this.game.device.cocoonJS && (this.game.device.iOS || this.game.device.android) || (window['PhaserGlobal'] && window['PhaserGlobal'].fakeiOSTouchLock))
+    if (this.game.device.needsTouchUnlock())
     {
         this.setTouchLock();
     }
@@ -516,7 +516,7 @@ Phaser.Video.prototype = {
      * This method is typically called by the Phaser.Loader and Phaser.Cache for you, but is exposed publicly for convenience.
      *
      * @method Phaser.Video#createVideoFromBlob
-     * @param {Blob} blob - The Blob containing the video data: `Blob([new Uint8Array(data)])`
+     * @param {Blob} blob - The Blob containing the video data.
      * @return {Phaser.Video} This Video object for method chaining.
      */
     createVideoFromBlob: function (blob) {
@@ -641,7 +641,7 @@ Phaser.Video.prototype = {
 
     /**
      * Starts this video playing.
-     * 
+     *
      * If the video is already playing, or has been queued to play with `changeSource` then this method just returns.
      *
      * @method Phaser.Video#play
@@ -1055,7 +1055,7 @@ Phaser.Video.prototype = {
     */
     setTouchLock: function () {
 
-        this.game.input.touch.addTouchLockCallback(this.unlock, this);
+        this.game.input.addTouchLockCallback(this.unlock, this);
         this.touchLocked = true;
 
     },

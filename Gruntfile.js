@@ -26,10 +26,8 @@ module.exports = function (grunt) {
 
     grunt.registerTask('default', ['build']);
 
-    grunt.registerTask('docs', ['clean:docs', 'pixidoc', 'jsdoc:html', 'replace:docs', 'clean:out']);
-    // grunt.registerTask('tsdocs', ['clean:out', 'pixidoc', 'gitclone:plugins', 'jsdoc:json', 'buildtsdoc:pixi', 'buildtsdoc:phaser', 'replace:phasertsdefheader']);
-    grunt.registerTask('tsdocs', ['clean:out', 'pixidoc', 'jsdoc:json', 'buildtsdoc:pixi', 'buildtsdoc:phaser', 'replace:phasertsdefheader']);
-    grunt.registerTask('tsdocsdebug', ['clean:out', 'pixidoc', 'jsdoc:json', 'buildtsdoc:pixi', 'buildtsdocdebug:phaser', 'replace:phasertsdefheader']);
+    grunt.registerTask('docs', ['clean:docs', 'gitclone:plugins', 'jsdoc:html', 'replace:docs', 'clean:out']);
+    grunt.registerTask('tsdocs', ['clean:out', 'gitclone:plugins', 'jsdoc:json', 'buildtsdoc:pixi', 'buildtsdoc:phaser', 'replace:phasertsdefheader']);
 
     grunt.registerTask('custom', 'Build a custom version of Phaser', function(arg) {
 
@@ -228,7 +226,7 @@ module.exports = function (grunt) {
                 //  3) PIXI
 
                 grunt.log.writeln("-> PIXI");
-                
+
                 if (!excludedKeys['intro'])
                 {
                     tasks.push('concat:pixiIntro');
@@ -237,7 +235,7 @@ module.exports = function (grunt) {
 
                 tasks.push('concat:pixiMain');
                 pixiFilelist.push('<%= modules_dir %>/pixi-main.js');
-                
+
                 /*
                 //  Optional Rope
                 if (!excludedKeys['rope'])
@@ -303,7 +301,7 @@ module.exports = function (grunt) {
                 //  3) PIXI
 
                 grunt.log.writeln("-> PIXI");
-                
+
                 if (!excludedKeys['intro'])
                 {
                     tasks.push('concat:pixiIntro');
@@ -312,7 +310,7 @@ module.exports = function (grunt) {
 
                 tasks.push('concat:pixiMain');
                 filelist.push('<%= modules_dir %>/pixi-main.js');
-                
+
                 /*
                 //  Optional Rope
                 if (!excludedKeys['rope'])
@@ -392,11 +390,10 @@ module.exports = function (grunt) {
 
             if (grunt.option('copy'))
             {
-                tasks.push('copy:custom');
-            }
-            else if (grunt.option('copycustom'))
-            {
-                grunt.config.set('target_dir', '<%= release_custom_dir %>');
+                if (grunt.option('copycustom'))
+                {
+                    grunt.config.set('target_dir', '<%= release_custom_dir %>');
+                }
                 tasks.push('copy:custom');
             }
 
@@ -473,7 +470,7 @@ module.exports = function (grunt) {
         grunt.option('exclude', 'ninja,creature');
         grunt.option('filename', 'phaser-split');
         grunt.option('sourcemap', true);
-        grunt.option('copy', false);
+        grunt.option('copy', true);
         grunt.option('copycustom', true);
         grunt.option('uglify', true);
         grunt.option('split', true);
@@ -524,7 +521,7 @@ module.exports = function (grunt) {
         grunt.option('exclude', 'ninja,p2,creature');
         grunt.option('filename', 'phaser-arcade-physics');
         grunt.option('sourcemap', true);
-        grunt.option('copy', false);
+        grunt.option('copy', true);
         grunt.option('copycustom', true);
         grunt.option('uglify', true);
 
@@ -537,7 +534,7 @@ module.exports = function (grunt) {
         grunt.option('exclude', 'p2,particles,creature');
         grunt.option('filename', 'phaser-ninja-physics');
         grunt.option('sourcemap', true);
-        grunt.option('copy', false);
+        grunt.option('copy', true);
         grunt.option('copycustom', true);
         grunt.option('uglify', true);
 
@@ -550,7 +547,7 @@ module.exports = function (grunt) {
         grunt.option('exclude', 'arcade,ninja,p2,tilemaps,particles,creature,weapon');
         grunt.option('filename', 'phaser-no-physics');
         grunt.option('sourcemap', true);
-        grunt.option('copy', false);
+        grunt.option('copy', true);
         grunt.option('copycustom', true);
         grunt.option('uglify', true);
 
@@ -563,7 +560,7 @@ module.exports = function (grunt) {
         grunt.option('exclude', 'gamepad,keyboard,bitmapdata,graphics,rendertexture,text,bitmaptext,retrofont,net,tweens,sound,debug,arcade,ninja,p2,tilemaps,particles,creature,video,rope,tilesprite,weapon');
         grunt.option('filename', 'phaser-minimum');
         grunt.option('sourcemap', true);
-        grunt.option('copy', false);
+        grunt.option('copy', true);
         grunt.option('copycustom', true);
         grunt.option('uglify', true);
 

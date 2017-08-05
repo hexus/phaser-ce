@@ -107,7 +107,7 @@ Phaser.Loader = function (game) {
     * If you don't require these mappings, or they cause problems on your server, then
     * remove them from the headers object and the XHR request will not try to use them.
     *
-    * This object can also be used to set the `X-Requested-With` header to 
+    * This object can also be used to set the `X-Requested-With` header to
     * `XMLHttpRequest` (or any other value you need). To enable this do:
     *
     * `this.load.headers.requestedWith = 'XMLHttpRequest'`
@@ -115,7 +115,7 @@ Phaser.Loader = function (game) {
     * before adding anything to the Loader. The XHR loader will then call:
     *
     * `setRequestHeader('X-Requested-With', this.headers['requestedWith'])`
-    * 
+    *
     * @property {object} headers
     * @default
     */
@@ -215,8 +215,9 @@ Phaser.Loader = function (game) {
     *
     * Many current browsers limit 6 requests per domain; this is slightly conservative.
     *
+    * This should generally be left at the default, but can be set to a higher limit for specific use-cases. Just be careful when setting large values as different browsers could behave differently.
+    *
     * @property {integer} maxParallelDownloads
-    * @protected
     */
     this.maxParallelDownloads = 4;
 
@@ -709,7 +710,7 @@ Phaser.Loader.prototype = {
     *
     * This method also supports passing in a texture object as the `url` argument. This allows you to load
     * compressed textures into Phaser. You can also use `Loader.texture` to do this.
-    * 
+    *
     * Compressed Textures are a WebGL only feature, and require 3rd party tools to create.
     * Available tools include Texture Packer, PVRTexTool, DirectX Texture Tool and Mali Texture Compression Tool.
     *
@@ -729,8 +730,8 @@ Phaser.Loader.prototype = {
     *     truecolor: 'assets/factory.png'
     * });
     * ```
-    * 
-    * The `truecolor` property points to a standard PNG file, that will be used if none of the 
+    *
+    * The `truecolor` property points to a standard PNG file, that will be used if none of the
     * compressed formats are supported by the browser / GPU.
     *
     * @method Phaser.Loader#image
@@ -753,6 +754,21 @@ Phaser.Loader.prototype = {
     },
 
     /**
+    * Generate an image from a BitmapData object and add it to the current load queue.
+    *
+    * @method Phaser.Loader#imageFromBitmapData
+    * @param {string} key - Unique asset key for the generated image.
+    * @param {Phaser.BitmapData} bitmapData
+    * @param {boolean} [overwrite=false] - If an unloaded file with a matching key already exists in the queue, this entry will overwrite it.
+    * @return {Phaser.Loader} This Loader instance.
+    */
+    imageFromBitmapData: function (key, bitmapData, overwrite) {
+
+        return this.image(key, bitmapData.canvas.toDataURL('image/png'), overwrite);
+
+    },
+
+    /**
     * Adds a Compressed Texture Image to the current load queue.
     *
     * Compressed Textures are a WebGL only feature, and require 3rd party tools to create.
@@ -760,7 +776,7 @@ Phaser.Loader.prototype = {
     *
     * Supported texture compression formats are: PVRTC, S3TC and ETC1.
     * Supported file formats are: PVR, DDS, KTX and PKM.
-    * 
+    *
     * The formats that support all 3 compression algorithms are PVR and KTX.
     * PKM only supports ETC1, and DDS only S3TC for now.
     *
@@ -774,10 +790,10 @@ Phaser.Loader.prototype = {
     *     truecolor: 'assets/factory.png'
     * });
     * ```
-    * 
-    * The `truecolor` property points to a standard PNG file, that will be used if none of the 
+    *
+    * The `truecolor` property points to a standard PNG file, that will be used if none of the
     * compressed formats are supported by the browser / GPU.
-    * 
+    *
     * The file is **not** loaded immediately after calling this method. The file is added to the queue ready to be loaded when the loader starts.
     *
     * The key must be a unique String. It is used to add the file to the Phaser.Cache upon successful load.
@@ -1273,7 +1289,7 @@ Phaser.Loader.prototype = {
     * Adds a Tile Map data file to the current load queue.
     *
     * Phaser can load data in two different formats: CSV and Tiled JSON.
-    * 
+    *
     * Tiled is a free software package, specifically for creating tilemaps, and is available from http://www.mapeditor.org
     *
     * You can choose to either load the data externally, by providing a URL to a json file.
@@ -1919,7 +1935,7 @@ Phaser.Loader.prototype = {
         // When true further non-pack file downloads are suppressed
         var syncblock = false;
 
-        var inflightLimit = this.enableParallel ? Phaser.Math.clamp(this.maxParallelDownloads, 1, 12) : 1;
+        var inflightLimit = this.enableParallel ? Math.max(1, this.maxParallelDownloads) : 1;
 
         for (var i = this._processingHead; i < this._fileList.length; i++)
         {
@@ -2032,11 +2048,11 @@ Phaser.Loader.prototype = {
             this.onLoadStart.dispatch();
         }
 
+        this.reset();
+
         this.onLoadComplete.dispatch();
 
         this.game.state.loadComplete();
-
-        this.reset();
 
     },
 
@@ -2299,6 +2315,10 @@ Phaser.Loader.prototype = {
                 if (file.key.split('_').pop() === 'truecolor')
                 {
                     this.loadImageTag(file);
+                }
+                else
+                {
+                    this.xhrLoad(file, this.transformUrl(file.url, file), 'arraybuffer', this.fileComplete);
                 }
                 break;
 
@@ -2780,13 +2800,14 @@ Phaser.Loader.prototype = {
 
             case 'texture':
 
+                var extension = /\.([^.]+)$/.exec(file.url.split('?', 1)[0])[1].toLowerCase();
                 if (file.data !== null)
                 {
-                    this.cache.addCompressedTextureMetaData(file.key, file.url, file.url.split('.').pop().toLowerCase(), file.data);
+                    this.cache.addCompressedTextureMetaData(file.key, file.url, extension, file.data);
                 }
                 else
                 {
-                    this.cache.addCompressedTextureMetaData(file.key, file.url, file.url.split('.').pop().toLowerCase(), xhr.response);
+                    this.cache.addCompressedTextureMetaData(file.key, file.url, extension, xhr.response);
                 }
                 break;
 
