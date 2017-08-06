@@ -356,6 +356,7 @@ Phaser.Utils.Debug.prototype = {
         var target = camera.target;
         var transform = camera.transform;
         var view = camera.view;
+        var transformView = camera.transformView;
 
         this.start(x, y, color);
         this.line('Camera (' + camera.width + ' x ' + camera.height + ')');
@@ -366,12 +367,13 @@ Phaser.Utils.Debug.prototype = {
             this.line('Bounds X: ' + bounds.x + ' Y: ' + bounds.y + ' W: ' + bounds.width + ' H: ' + bounds.height);
         }
 
-        this.line('Transform A: ' + transform.a + ' B: ' + transform.b + ' C: ' + transform.c + ' D: ' + transform.d + ' X: ' + transform.tx + ' Y: ' + transform.ty);
         this.line('View X: ' + view.x + ' Y: ' + view.y + ' W: ' + view.width + ' H: ' + view.height);
+        this.line('Transform A: ' + transform.a + ' B: ' + transform.b + ' C: ' + transform.c + ' D: ' + transform.d + ' X: ' + transform.tx + ' Y: ' + transform.ty);
+        this.line('Transform View X: ' + transformView.x + ' Y: ' + transformView.y + ' W: ' + transformView.width + ' H: ' + transformView.height);
         // this.line('Screen View x: ' + camera.screenView.x + ' Y: ' + camera.screenView.y + ' w: ' + camera.screenView.width + ' h: ' + camera.screenView.height);
-        this.line('Deadzone: ' + (deadzone ? ('x: ' + deadzone.x + ' y: ' + deadzone.y + ' w: ' + deadzone.width + ' h: ' + deadzone.height) : deadzone));
+        this.line('Deadzone: ' + (deadzone ? ('X: ' + deadzone.x + ' Y: ' + deadzone.y + ' W: ' + deadzone.width + ' H: ' + deadzone.height) : deadzone));
         this.line('Total in view: ' + camera.totalInView);
-        this.line('At limit: x: ' + camera.atLimit.x + ' y: ' + camera.atLimit.y);
+        this.line('At limit: X: ' + camera.atLimit.x + ' Y: ' + camera.atLimit.y);
         this.line('Target: ' + (target ? (target.name || target) : target));
         this.stop();
 

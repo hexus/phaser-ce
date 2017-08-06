@@ -632,8 +632,11 @@ Phaser.Camera.prototype = {
     */
     updateTarget: function () {
 
+        this.updateTransform();
+
         var view = this.view;
         var deadzone = this.deadzone;
+        var transformView = this.transformView;
 
         this._targetPosition.x = this.target.position.x;
         this._targetPosition.y = this.target.position.y;
@@ -648,7 +651,7 @@ Phaser.Camera.prototype = {
             }
             else if (this._edge > this.deadzone.right)
             {
-                view.x = this.game.math.linear(this.view.x, this._targetPosition.x - deadzone.right, this.lerp.x);
+                view.x = this.game.math.linear(view.x, this._targetPosition.x - deadzone.right, this.lerp.x);
             }
 
             this._edge = this._targetPosition.y - view.y;
@@ -666,6 +669,10 @@ Phaser.Camera.prototype = {
         {
             view.x = this.game.math.linear(view.x, this._targetPosition.x - view.halfWidth, this.lerp.x);
             view.y = this.game.math.linear(view.y, this._targetPosition.y - view.halfHeight, this.lerp.y);
+
+            // TODO: Reverse transform on these coordinates, same for deadzones above, then apply to source view
+            // view.x = this.game.math.linear(transformView.x, this._targetPosition.x - transformView.halfWidth, this.lerp.x);
+            // view.y = this.game.math.linear(transformView.y, this._targetPosition.y - transformView.halfHeight, this.lerp.y);
         }
 
         if (this.bounds)
@@ -724,8 +731,8 @@ Phaser.Camera.prototype = {
         // Update the transform view
         this.transformView.x = -this._axisAlignedTransform.tx;
         this.transformView.y = -this._axisAlignedTransform.ty;
-        this.transformView.width = this.view.width * this.scale.x;
-        this.transformView.height = this.view.height * this.scale.y;
+        this.transformView.width = this.view.width / this.scale.x;
+        this.transformView.height = this.view.height / this.scale.y;
 
     },
 
