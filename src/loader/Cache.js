@@ -245,7 +245,7 @@ Phaser.Cache.prototype = {
         {
             this.removeImage(key);
         }
-        
+
         var data = (extension in Phaser.LoaderParser) ? Phaser.LoaderParser[extension](arrayBuffer) : arrayBuffer;
 
         var texture = {
@@ -288,6 +288,8 @@ Phaser.Cache.prototype = {
     * Adds an Image file into the Cache. The file must have already been loaded, typically via Phaser.Loader, but can also have been loaded into the DOM.
     * If an image already exists in the cache with the same key then it is removed and destroyed, and the new image inserted in its place.
     *
+    * If the image has not yet been fetched (successfully or not), a `console.warn` message will be displayed.
+    *
     * @method Phaser.Cache#addImage
     * @param {string} key - The key that this asset will be stored in the cache under. This should be unique within this cache.
     * @param {string} url - The URL the asset was loaded from. If the asset was not loaded externally set to `null`.
@@ -299,6 +301,11 @@ Phaser.Cache.prototype = {
         if (this.checkImageKey(key))
         {
             this.removeImage(key);
+        }
+
+        if (data.complete === false)
+        {
+            console.warn('Phaser.Cache.addImage: Image "' + key + '" hasn\'t been retrieved yet');
         }
 
         var img = {
@@ -340,17 +347,22 @@ Phaser.Cache.prototype = {
     */
     addDefaultImage: function () {
 
+        var cache = this;
         var img = new Image();
 
+        img.onload = function () {
+            var obj = cache.addImage('__default', null, img);
+
+            //  Because we don't want to invalidate the sprite batch for an invisible texture
+            obj.base.skipRender = true;
+
+            //  Make it easily available within the rest of Phaser / Pixi
+            Phaser.Cache.DEFAULT = new PIXI.Texture(obj.base);
+
+            img.onload = null;
+        };
+
         img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgAQMAAABJtOi3AAAAA1BMVEX///+nxBvIAAAAAXRSTlMAQObYZgAAABVJREFUeF7NwIEAAAAAgKD9qdeocAMAoAABm3DkcAAAAABJRU5ErkJggg==";
-
-        var obj = this.addImage('__default', null, img);
-
-        //  Because we don't want to invalidate the sprite batch for an invisible texture
-        obj.base.skipRender = true;
-
-        //  Make it easily available within the rest of Phaser / Pixi
-        Phaser.Cache.DEFAULT = new PIXI.Texture(obj.base);
 
     },
 
@@ -365,14 +377,19 @@ Phaser.Cache.prototype = {
     */
     addMissingImage: function () {
 
+        var cache = this;
         var img = new Image();
 
+        img.onload = function () {
+            var obj = cache.addImage('__missing', null, img);
+
+            //  Make it easily available within the rest of Phaser / Pixi
+            Phaser.Cache.MISSING = new PIXI.Texture(obj.base);
+
+            img.onload = null;
+        };
+
         img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAJ9JREFUeNq01ssOwyAMRFG46v//Mt1ESmgh+DFmE2GPOBARKb2NVjo+17PXLD8a1+pl5+A+wSgFygymWYHBb0FtsKhJDdZlncG2IzJ4ayoMDv20wTmSMzClEgbWYNTAkQ0Z+OJ+A/eWnAaR9+oxCF4Os0H8htsMUp+pwcgBBiMNnAwF8GqIgL2hAzaGFFgZauDPKABmowZ4GL369/0rwACp2yA/ttmvsQAAAABJRU5ErkJggg==";
-
-        var obj = this.addImage('__missing', null, img);
-
-        //  Make it easily available within the rest of Phaser / Pixi
-        Phaser.Cache.MISSING = new PIXI.Texture(obj.base);
 
     },
 
@@ -541,9 +558,9 @@ Phaser.Cache.prototype = {
 
     /**
     * Add a new Bitmap Font to the Cache, where the font texture is part of a Texture Atlas.
-    * 
+    *
     * The atlas must already exist in the cache, and be available based on the given `atlasKey`.
-    * 
+    *
     * The `atlasFrame` specifies the name of the frame within the atlas that the Bitmap Font is
     * stored in.
     *
@@ -2043,7 +2060,9 @@ Phaser.Cache.prototype = {
 
     /**
     * Clears the cache. Removes every local cache object reference.
-    * If an object in the cache has a `destroy` method it will also be called.
+    * If an object in the cache has a `destroy` method it will be called;
+    * otherwise, `destroy` will be called on any of the object's `base`, `data`,
+    * `frameData`, or `texture` properties.
     *
     * @method Phaser.Cache#destroy
     */
@@ -2057,10 +2076,7 @@ Phaser.Cache.prototype = {
             {
                 if (key !== '__default' && key !== '__missing')
                 {
-                    if (cache[key]['destroy'])
-                    {
-                        cache[key].destroy();
-                    }
+                    this.destroyItem(cache[key]);
 
                     delete cache[key];
                 }
@@ -2070,6 +2086,42 @@ Phaser.Cache.prototype = {
         this._urlMap = null;
         this._urlResolver = null;
         this._urlTemp = null;
+
+    },
+
+    /**
+    * @method Phaser.Cache#destroyItem
+    * @protected
+    * @param {object} item
+    */
+    destroyItem: function (item) {
+
+        if (item.destroy)
+        {
+            item.destroy();
+        }
+        else
+        {
+            if (item.base && item.base.destroy)
+            {
+                item.base.destroy();
+            }
+
+            if (item.data && item.data.destroy)
+            {
+                item.data.destroy();
+            }
+
+            if (item.frameData && item.frameData.destroy)
+            {
+                item.frameData.destroy();
+            }
+
+            if (item.texture && item.texture.destroy)
+            {
+                item.texture.destroy(true);
+            }
+        }
 
     }
 

@@ -8,7 +8,7 @@
 * Creates a new Phaser.Tilemap object. The map can either be populated with data from a Tiled JSON file or from a CSV file.
 *
 * Tiled is a free software package specifically for creating tile maps, and is available from http://www.mapeditor.org
-* 
+*
 * To do this pass the Cache key as the first parameter. When using Tiled data you need only provide the key.
 * When using CSV data you must provide the key and the tileWidth and tileHeight parameters.
 * If creating a blank tilemap to be populated later, you can either specify no parameters at all and then use `Tilemap.create` or pass the map and tile dimensions here.
@@ -103,7 +103,7 @@ Phaser.Tilemap = function (game, key, tileWidth, tileHeight, width, height) {
     * @property {array} tilesets - An array of Tilesets.
     */
     this.tilesets = data.tilesets;
-    
+
     /**
     * @property {array} imagecollections - An array of Image Collections.
     */
@@ -376,14 +376,20 @@ Phaser.Tilemap.prototype = {
     },
 
     /**
-    * Creates a Sprite for every object matching the given gid in the map data. You can optionally specify the group that the Sprite will be created in. If none is
+    * Creates a Sprite for every {@link http://doc.mapeditor.org/reference/tmx-map-format/#object object} matching the `gid` argument. You can optionally specify the group that the Sprite will be created in. If none is
     * given it will be created in the World. All properties from the map data objectgroup are copied across to the Sprite, so you can use this as an easy way to
-    * configure Sprite properties from within the map editor. For example giving an object a property of alpha: 0.5 in the map editor will duplicate that when the
-    * Sprite is created. You could also give it a value like: body.velocity.x: 100 to set it moving automatically.
+    * configure Sprite properties from within the map editor. For example giving an object a property of `alpha: 0.5` in the map editor will duplicate that when the
+    * Sprite is created. You could also give it a value like: `body.velocity.x: 100` to set it moving automatically.
+    *
+    * The `gid` argument is matched against:
+    *
+    * 1. For a tile object, the tile identifier (`gid`); or
+    * 2. The object's unique ID (`id`); or
+    * 3. The object's `name` (a string)
     *
     * @method Phaser.Tilemap#createFromObjects
     * @param {string} name - The name of the Object Group to create Sprites from.
-    * @param {number} gid - The layer array index value, or if a string is given the layer name within the map data.
+    * @param {number|string} gid - The object's tile reference (gid), unique ID (id) or name.
     * @param {string} key - The Game.cache key of the image that this Sprite will use.
     * @param {number|string} [frame] - If the Sprite image contains multiple frames you can specify which one to use here.
     * @param {boolean} [exists=true] - The default exists state of the Sprite.
@@ -467,7 +473,7 @@ Phaser.Tilemap.prototype = {
     /**
     * Creates a Sprite for every object matching the given tile indexes in the map data.
     * You can specify the group that the Sprite will be created in. If none is given it will be created in the World.
-    * You can optional specify if the tile will be replaced with another after the Sprite is created. This is useful if you want to lay down special 
+    * You can optional specify if the tile will be replaced with another after the Sprite is created. This is useful if you want to lay down special
     * tiles in a level that are converted to Sprites, but want to replace the tile itself with a floor tile or similar once converted.
     *
     * @method Phaser.Tilemap#createFromTiles
@@ -588,7 +594,7 @@ Phaser.Tilemap.prototype = {
 
         if (index === null || index > this.layers.length)
         {
-            console.warn('Tilemap.createLayer: Invalid layer ID given: ' + index);
+            console.warn('Tilemap.createLayer: Invalid layer ID given: "' + layer + '"');
             return;
         }
 
@@ -781,9 +787,11 @@ Phaser.Tilemap.prototype = {
     * If a callback is already set for the tile index it will be replaced. Set the callback to null to remove it.
     * If you want to set a callback for a tile at a specific location on the map then see setTileLocationCallback.
     *
+    * Return `true` from the callback to continue separating the tile and colliding object, or `false` to cancel the collision for the current tile (see {@link Phaser.Physics.Arcade#separateTile}).
+    *
     * @method Phaser.Tilemap#setTileIndexCallback
     * @param {number|array} indexes - Either a single tile index, or an array of tile indexes to have a collision callback set for.
-    * @param {function} callback - The callback that will be invoked when the tile is collided with.
+    * @param {function} callback - The callback that will be invoked when the tile is collided with (via {@link Phaser.Physics.Arcade#collide}).
     * @param {object} callbackContext - The context under which the callback is called.
     * @param {number|string|Phaser.TilemapLayer} [layer] - The layer to operate on. If not given will default to this.currentLayer.
     */
@@ -812,12 +820,14 @@ Phaser.Tilemap.prototype = {
     * If a callback is already set for the tile index it will be replaced. Set the callback to null to remove it.
     * If you want to set a callback for a tile at a specific location on the map then see setTileLocationCallback.
     *
+    * Return `true` from the callback to continue separating the tile and colliding object, or `false` to cancel the collision for the current tile (see {@link Phaser.Physics.Arcade#separateTile}).
+    *
     * @method Phaser.Tilemap#setTileLocationCallback
     * @param {number} x - X position of the top left of the area to copy (given in tiles, not pixels)
     * @param {number} y - Y position of the top left of the area to copy (given in tiles, not pixels)
     * @param {number} width - The width of the area to copy (given in tiles, not pixels)
     * @param {number} height - The height of the area to copy (given in tiles, not pixels)
-    * @param {function} callback - The callback that will be invoked when the tile is collided with.
+    * @param {function} callback - The callback that will be invoked when the tile is collided with (via {@link Phaser.Physics.Arcade#collide}).
     * @param {object} callbackContext - The context under which the callback is called.
     * @param {number|string|Phaser.TilemapLayer} [layer] - The layer to operate on. If not given will default to this.currentLayer.
     */
@@ -840,8 +850,10 @@ Phaser.Tilemap.prototype = {
     },
 
     /**
-    * Sets collision the given tile or tiles. You can pass in either a single numeric index or an array of indexes: [ 2, 3, 15, 20].
+    * Sets collision on the given tile or tiles. You can pass in either a single numeric index or an array of indexes: [2, 3, 15, 20].
     * The `collides` parameter controls if collision will be enabled (true) or disabled (false).
+    *
+    * Collision-enabled tiles can be collided against Sprites using {@link Phaser.Physics.Arcade#collide}.
     *
     * @method Phaser.Tilemap#setCollision
     * @param {number|array} indexes - Either a single tile index, or an array of tile IDs to be checked for collision.
@@ -853,7 +865,7 @@ Phaser.Tilemap.prototype = {
 
         if (collides === undefined) { collides = true; }
         if (recalculate === undefined) { recalculate = true; }
-        
+
         layer = this.getLayer(layer);
 
         if (typeof indexes === 'number')
@@ -893,7 +905,7 @@ Phaser.Tilemap.prototype = {
 
         if (collides === undefined) { collides = true; }
         if (recalculate === undefined) { recalculate = true; }
-        
+
         layer = this.getLayer(layer);
 
         if (start > stop)
@@ -928,7 +940,7 @@ Phaser.Tilemap.prototype = {
 
         if (collides === undefined) { collides = true; }
         if (recalculate === undefined) { recalculate = true; }
-        
+
         layer = this.getLayer(layer);
 
         //  Collide everything, except the IDs given in the indexes array
@@ -1042,7 +1054,7 @@ Phaser.Tilemap.prototype = {
     },
 
     /**
-    * Turn off/on the recalculation of faces for tile or collision updates. 
+    * Turn off/on the recalculation of faces for tile or collision updates.
     * `setPreventRecalculate(true)` puts recalculation on hold while `setPreventRecalculate(false)` recalculates all the changed layers.
     *
     * @method Phaser.Tilemap#setPreventRecalculate
@@ -1084,7 +1096,7 @@ Phaser.Tilemap.prototype = {
             this.needToRecalculate[layer] = true;
             return;
         }
-        
+
         var above = null;
         var below = null;
         var left = null;
@@ -1565,7 +1577,7 @@ Phaser.Tilemap.prototype = {
         if (y === undefined) { y = 0; }
         if (width === undefined) { width = this.layers[layer].width; }
         if (height === undefined) { height = this.layers[layer].height; }
-        
+
         if (x < 0)
         {
             x = 0;

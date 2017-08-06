@@ -3,7 +3,7 @@
  */
 
 /**
- * @class PixiFastShader
+ * @class PIXI.PixiFastShader
  * @constructor
  * @param gl {WebGLContext} the current WebGL drawing context
  */
@@ -31,12 +31,12 @@ PIXI.PixiFastShader = function (gl) {
     if (PIXI._enableMultiTextureToggle) {
         var gl = this.gl;
         this.MAX_TEXTURES = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
-        var dynamicIfs = '\tif (vTextureIndex == 0.0) gl_FragColor = texture2D(uSamplerArray[0], vTextureCoord) * vColor;\n'
+        var dynamicIfs = '\tif (vTextureIndex == 0.0) { gl_FragColor = texture2D(uSamplerArray[0], vTextureCoord) * vColor;return;}\n'
         for (var index = 1; index < this.MAX_TEXTURES; ++index)
         {
-            dynamicIfs += '\telse if (vTextureIndex == ' + 
-                        index + '.0) gl_FragColor = texture2D(uSamplerArray[' + 
-                        index + '], vTextureCoord) * vColor;\n'
+            dynamicIfs += '\tif (vTextureIndex == ' +
+                        index + '.0) { gl_FragColor = texture2D(uSamplerArray[' +
+                        index + '], vTextureCoord) * vColor;return;}\n'
         }
 
         /**
@@ -60,8 +60,8 @@ PIXI.PixiFastShader = function (gl) {
             'const vec4 RED = vec4(1.0, 0.0, 0.0, 1.0);',
             'void main(void) {',
             dynamicIfs,
-            '   else if(vTextureIndex >= ' + this.MAX_TEXTURES + '.0) gl_FragColor = BLUE;',
-            '   else if(isnan(vTextureIndex)) gl_FragColor = RED;',       
+            '   if(vTextureIndex >= ' + this.MAX_TEXTURES + '.0) { gl_FragColor = BLUE;return;}',
+            '   if(isnan(vTextureIndex)) {gl_FragColor = RED;return;}',
             '}'
         ];
     } else {
@@ -76,7 +76,7 @@ PIXI.PixiFastShader = function (gl) {
             '   gl_FragColor = texture2D(uSampler, vTextureCoord) * vColor;',
             '}'
         ];
-    }    
+    }
 
     /**
      * The vertex shader.
@@ -131,8 +131,8 @@ PIXI.PixiFastShader.prototype.constructor = PIXI.PixiFastShader;
 
 /**
  * Initialises the shader.
- * 
- * @method init
+ *
+ * @method PIXI.PixiFastShader#init
  */
 PIXI.PixiFastShader.prototype.init = function () {
 
@@ -161,7 +161,7 @@ PIXI.PixiFastShader.prototype.init = function () {
         gl.activeTexture(gl.TEXTURE0);
         gl.uniform1iv(this.uSampler, indices);
     }
-    
+
     this.projectionVector = gl.getUniformLocation(program, 'projectionVector');
     this.offsetVector = gl.getUniformLocation(program, 'offsetVector');
     this.dimensions = gl.getUniformLocation(program, 'dimensions');
@@ -206,8 +206,8 @@ PIXI.PixiFastShader.prototype.init = function () {
 
 /**
  * Destroys the shader.
- * 
- * @method destroy
+ *
+ * @method PIXI.PixiFastShader#destroy
  */
 PIXI.PixiFastShader.prototype.destroy = function () {
     this.gl.deleteProgram(this.program);

@@ -11,7 +11,7 @@
 * your games `render` function. This is because they are drawn directly onto the game canvas
 * itself, so if you call any debug methods outside of `render` they are likely to be overwritten
 * by the game itself.
-* 
+*
 * If your game is running in WebGL then Debug will create a Sprite that is placed at the top of the Stage display list and bind a canvas texture
 * to it, which must be uploaded every frame. Be advised: this is very expensive, especially in browsers like Firefox. So please only enable Debug
 * in WebGL mode if you really need it (or your desktop can cope with it well) and disable it for production!
@@ -28,7 +28,7 @@ Phaser.Utils.Debug = function (game) {
     this.game = game;
 
     /**
-    * @property {Phaser.Image} sprite - If debugging in WebGL mode we need this.
+    * @property {Phaser.Image} sprite - If debugging in WebGL mode, this is the Image displaying the debug {@link #bmd BitmapData}.
     */
     this.sprite = null;
 
@@ -49,22 +49,31 @@ Phaser.Utils.Debug = function (game) {
 
     /**
     * @property {string} font - The font that the debug information is rendered in.
-    * @default '14px Courier'
+    * @default
     */
     this.font = '14px Courier';
 
     /**
     * @property {number} columnWidth - The spacing between columns.
+    * @default
     */
     this.columnWidth = 100;
 
     /**
     * @property {number} lineHeight - The line height between the debug text.
+    * @default
     */
     this.lineHeight = 16;
 
     /**
+    * @property {number} lineWidth - The width of the stroke on lines and shapes. A positive number.
+    * @default
+    */
+    this.lineWidth = 1;
+
+    /**
     * @property {boolean} renderShadow - Should the text be rendered with a slight shadow? Makes it easier to read on different types of background.
+    * @default
     */
     this.renderShadow = true;
 
@@ -88,8 +97,28 @@ Phaser.Utils.Debug = function (game) {
 
     /**
     * @property {boolean} dirty - Does the canvas need re-rendering?
+    * @default
     */
     this.dirty = false;
+
+    /**
+     * @property {boolean} isDisabled - If `enableDebug: false` is passed to {@link Phaser.Game} or if Phaser is built without the Debug class, this will be true.
+     * @default
+     * @readonly
+     */
+    this.isDisabled = false;
+
+    /**
+     * @property {Phaser.Line} _line - A reusable rendering line.
+     * @private
+     */
+    this._line = null;
+
+    /**
+     * @property {Phaser.Rectangle} _rect - A reusable rendering rectangle.
+     * @private
+     */
+    this._rect = null;
 
 };
 
@@ -119,6 +148,9 @@ Phaser.Utils.Debug.prototype = {
             this.context = this.canvas.getContext('2d');
         }
 
+        this._line = new Phaser.Line();
+        this._rect = new Phaser.Rectangle();
+
     },
 
     /**
@@ -127,16 +159,13 @@ Phaser.Utils.Debug.prototype = {
     *
     * @method Phaser.Utils.Debug#resize
     * @protected
-    * @param {Phaser.ScaleManager} scaleManager - The Phaser ScaleManager.
-    * @param {number} width - The new width of the game.
-    * @param {number} height - The new height of the game.
     */
-    resize: function (scaleManager, width, height) {
+    resize: function () {
 
-        this.bmd.resize(width, height);
+        this.bmd.resize(this.game.width, this.game.height);
 
-        this.canvas.width = width;
-        this.canvas.height = height;
+        this.canvas.width = this.game.width;
+        this.canvas.height = this.game.height;
 
     },
 
@@ -283,6 +312,35 @@ Phaser.Utils.Debug.prototype = {
     },
 
     /**
+    * Marks the follow {@link #target} and {@link #deadzone}.
+    *
+    * @method Phaser.Utils.Debug#camera
+    * @param {Phaser.Camera} camera - The Phaser.Camera to show the debug information for.
+    * @param {string} [color] - Color of the debug shapes to be rendered (format is css color string).
+    * @param {boolean} [filled=true] - Render the shapes filled (default, true) or stroked (false).
+    */
+    camera: function (camera, color, filled) {
+
+        var deadzone = camera.deadzone;
+        var target = camera.target;
+        var view = camera.view;
+
+        if (deadzone)
+        {
+            this._rect.setTo(view.x + deadzone.x, view.y + deadzone.y, deadzone.width, deadzone.height);
+            this.rectangle(this._rect, color, filled);
+        }
+
+        if (target)
+        {
+            this._line.setTo(view.centerX, view.centerY, target.x, target.y);
+            this.geom(this._line, color, filled);
+            this.geom(target, color, false, 3);
+        }
+
+    },
+
+    /**
     * Render camera information including dimensions and location.
     *
     * @method Phaser.Utils.Debug#cameraInfo
@@ -293,20 +351,28 @@ Phaser.Utils.Debug.prototype = {
     */
     cameraInfo: function (camera, x, y, color) {
 
+        var bounds = camera.bounds;
+        var deadzone = camera.deadzone;
+        var target = camera.target;
+        var transform = camera.transform;
+        var view = camera.view;
+
         this.start(x, y, color);
         this.line('Camera (' + camera.width + ' x ' + camera.height + ')');
-        this.line('X: ' + camera.x + ' Y: ' + camera.y);
+        this.line('x: ' + camera.x + ' y: ' + camera.y);
 
-        if (camera.bounds)
+        if (bounds)
         {
-            this.line('Bounds X: ' + camera.bounds.x + ' Y: ' + camera.bounds.y + ' W: ' + camera.bounds.width + ' H: ' + camera.bounds.height);
+            this.line('Bounds X: ' + bounds.x + ' Y: ' + bounds.y + ' W: ' + bounds.width + ' H: ' + bounds.height);
         }
 
-        this.line('Transform A: ' + camera.transform.a + ' B: ' + camera.transform.b + ' C: ' + camera.transform.c + ' D: ' + camera.transform.d + ' X: ' + camera.transform.tx + ' Y: ' + camera.transform.ty);
-
-        this.line('View X: ' + camera.view.x + ' Y: ' + camera.view.y + ' W: ' + camera.view.width + ' H: ' + camera.view.height);
+        this.line('Transform A: ' + transform.a + ' B: ' + transform.b + ' C: ' + transform.c + ' D: ' + transform.d + ' X: ' + transform.tx + ' Y: ' + transform.ty);
+        this.line('View X: ' + view.x + ' Y: ' + view.y + ' W: ' + view.width + ' H: ' + view.height);
         // this.line('Screen View x: ' + camera.screenView.x + ' Y: ' + camera.screenView.y + ' w: ' + camera.screenView.width + ' h: ' + camera.screenView.height);
+        this.line('Deadzone: ' + (deadzone ? ('x: ' + deadzone.x + ' y: ' + deadzone.y + ' w: ' + deadzone.width + ' h: ' + deadzone.height) : deadzone));
         this.line('Total in view: ' + camera.totalInView);
+        this.line('At limit: x: ' + camera.atLimit.x + ' y: ' + camera.atLimit.y);
+        this.line('Target: ' + (target ? (target.name || target) : target));
         this.stop();
 
     },
@@ -599,6 +665,7 @@ Phaser.Utils.Debug.prototype = {
 
         this.context.fillStyle = color;
         this.context.strokeStyle = color;
+        this.context.lineWidth = this.lineWidth;
 
         if (object instanceof Phaser.Rectangle || forceType === 1)
         {
@@ -632,7 +699,6 @@ Phaser.Utils.Debug.prototype = {
         }
         else if (object instanceof Phaser.Line || forceType === 4)
         {
-            this.context.lineWidth = 1;
             this.context.beginPath();
             this.context.moveTo((object.start.x + 0.5) - this.game.camera.x, (object.start.y + 0.5) - this.game.camera.y);
             this.context.lineTo((object.end.x + 0.5) - this.game.camera.x, (object.end.y + 0.5) - this.game.camera.y);
@@ -647,10 +713,10 @@ Phaser.Utils.Debug.prototype = {
     /**
     * Renders a Rectangle.
     *
-    * @method Phaser.Utils.Debug#geom
-    * @param {Phaser.Rectangle|object} object - The geometry object to render.
+    * @method Phaser.Utils.Debug#rectangle
+    * @param {Phaser.Rectangle|object} object - The rectangle to render.
     * @param {string} [color] - Color of the debug info to be rendered (format is css color string).
-    * @param {boolean} [filled=true] - Render the objected as a filled (default, true) or a stroked (false)
+    * @param {boolean} [filled=true] - Render the rectangle as filled (default, true) or a stroked (false)
     */
     rectangle: function (object, color, filled) {
 
@@ -667,6 +733,7 @@ Phaser.Utils.Debug.prototype = {
         }
         else
         {
+            this.context.lineWidth = this.lineWidth;
             this.context.strokeStyle = color;
             this.context.strokeRect(object.x - this.game.camera.x, object.y - this.game.camera.y, object.width, object.height);
         }
@@ -764,7 +831,7 @@ Phaser.Utils.Debug.prototype = {
 
             if (sprite.body.type === Phaser.Physics.ARCADE)
             {
-                Phaser.Physics.Arcade.Body.render(this.context, sprite.body, color, filled);
+                Phaser.Physics.Arcade.Body.render(this.context, sprite.body, color, filled, this.lineWidth);
             }
             else if (sprite.body.type === Phaser.Physics.NINJA)
             {
@@ -817,12 +884,12 @@ Phaser.Utils.Debug.prototype = {
     * @method Phaser.Utils.Debug#box2dWorld
     */
     box2dWorld: function () {
-    
+
         this.start();
-        
+
         this.context.translate(-this.game.camera.view.x, -this.game.camera.view.y, 0);
         this.game.physics.box2d.renderDebugDraw(this.context);
-        
+
         this.stop();
 
     },
@@ -832,11 +899,11 @@ Phaser.Utils.Debug.prototype = {
     * This uses the standard debug drawing feature of Box2D, so colors will be decided by the Box2D engine.
     *
     * @method Phaser.Utils.Debug#box2dBody
-    * @param {Phaser.Sprite} sprite - The sprite whos body will be rendered.
-    * @param {string} [color='rgb(0,255,0)'] - color of the debug info to be rendered. (format is css color string).
+    * @param {Phaser.Physics.Box2D.Body} body - The body to be rendered.
+    * @param {string} [color='rgb(0,255,0)'] - Color of the rendering (format is css color string).
     */
     box2dBody: function (body, color) {
-    
+
         this.start();
         Phaser.Physics.Box2D.renderBody(this.context, body, color);
         this.stop();
@@ -845,12 +912,12 @@ Phaser.Utils.Debug.prototype = {
 
     /**
     * Call this function from the Dev Tools console.
-    * 
+    *
     * It will scan the display list and output all of the Objects it finds, and their renderOrderIDs.
     *
     * **Note** Requires a browser that supports console.group and console.groupEnd (such as Chrome)
     *
-    * @method displayList
+    * @method Phaser.Utils.Debug#displayList
     * @param {Object} [displayObject] - The displayObject level display object to start from. Defaults to the World.
     */
     displayList: function (displayObject) {
@@ -877,12 +944,57 @@ Phaser.Utils.Debug.prototype = {
     },
 
     /**
+     * Prints a description of the {@link Phaser.Game#renderer renderer} and render session.
+     *
+     * @method Phaser.Utils.Debug#renderer
+     * @param {number} [x=0] - The X value the debug info will start from.
+     * @param {number} [y=0] - The Y value the debug info will start from.
+     * @param {string} [color='rgb(255,255,255)'] - The color the debug text will drawn in.
+     */
+    renderer: function (x, y, color) {
+
+        var r = this.game.renderer;
+        var s = r.renderSession;
+
+        this.start(x, y, color);
+
+        this.line((r.gl ? 'WebGL' : 'Canvas') + ' Renderer (' + r.width + ' x ' + r.height + ')');
+        this.line('autoResize: ' + r.autoResize);
+        this.line('clearBeforeRender: ' + r.clearBeforeRender);
+        this.line('resolution: ' + r.resolution);
+        this.line('transparent: ' + r.transparent);
+
+        if (r.gl)
+        {
+            this.line('drawCount: ' + s.drawCount);
+            this.line('flushCount: ' + s.flushCount);
+            this.line('maxTextures: ' + r.maxTextures);
+            this.line('maxTextureSize: ' + r.maxTextureSize);
+            this.line('maxTextureAvailableSpace: ' + s.maxTextureAvailableSpace);
+            this.line('currentBatchedTextures: ('+ r.currentBatchedTextures.length + ')');
+
+            for (var i = 0; i < r.currentBatchedTextures.length; i++)
+            {
+                this.line('  ' + r.currentBatchedTextures[i]);
+            }
+        }
+        else
+        {
+            this.line('roundPixels: ' + s.roundPixels);
+            this.line('scaleMode: ' + (s.scaleMode === 0 ? 'LINEAR' : (s.scaleMode === 1 ? 'NEAREST' : s.scaleMode)));
+        }
+
+        this.stop();
+
+    },
+
+    /**
     * Destroy this object.
     *
     * @method Phaser.Utils.Debug#destroy
     */
     destroy: function () {
-    
+
         Phaser.CanvasPool.remove(this);
 
     }

@@ -154,3 +154,36 @@ if (!window.console)
     window.console.log = window.console.assert = function(){};
     window.console.warn = window.console.assert = function(){};
 }
+
+/**
+ * Fix for Object.assign not existing on older devices
+ */
+
+if (!Object.assign) {
+    /* jshint -W098 */
+    // We include `varArgs` (unused) to ensure Object.assign.length === 2
+    Object.assign = function(target, varArgs) {
+    /* jshint +W098 */
+        'use strict';
+        if (target == null) { // TypeError if undefined or null
+            throw new TypeError('Cannot convert undefined or null to object');
+        }
+
+        var to = Object(target);
+        var hasOwn = Object.prototype.hasOwnProperty;
+
+        for (var index = 1; index < arguments.length; index++) {
+            var nextSource = arguments[index];
+
+            if (nextSource != null) { // Skip over if undefined or null
+                for (var nextKey in nextSource) {
+                    // Avoid bugs when hasOwnProperty is shadowed
+                    if (hasOwn.call(nextSource, nextKey)) {
+                        to[nextKey] = nextSource[nextKey];
+                    }
+                }
+            }
+        }
+        return to;
+    };
+}

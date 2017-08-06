@@ -12,7 +12,7 @@ PIXI._enableMultiTextureToggle = false;
  * So no need for Sprite Batches or Sprite Clouds.
  * Don't forget to add the view to your DOM or you will not see anything :)
  *
- * @class WebGLRenderer
+ * @class PIXI.WebGLRenderer
  * @constructor
  * @param game {Phaser.Game} A reference to the Phaser Game instance
  */
@@ -190,6 +190,7 @@ PIXI.WebGLRenderer = function(game) {
     this.renderSession.game = this.game;
     this.renderSession.gl = this.gl;
     this.renderSession.drawCount = 0;
+    this.renderSession.flushCount = 0;
     this.renderSession.shaderManager = this.shaderManager;
     this.renderSession.maskManager = this.maskManager;
     this.renderSession.filterManager = this.filterManager;
@@ -198,6 +199,7 @@ PIXI.WebGLRenderer = function(game) {
     this.renderSession.stencilManager = this.stencilManager;
     this.renderSession.renderer = this;
     this.renderSession.resolution = this.resolution;
+    this.renderSession.maxTextureAvailableSpace = null; // filled in setTexturePriority()
 
     // time init the context..
     this.initContext();
@@ -211,7 +213,7 @@ PIXI.WebGLRenderer = function(game) {
 PIXI.WebGLRenderer.prototype.constructor = PIXI.WebGLRenderer;
 
 /**
-* @method initContext
+* @method PIXI.WebGLRenderer#initContext
 */
 PIXI.WebGLRenderer.prototype.initContext = function()
 {
@@ -225,6 +227,7 @@ PIXI.WebGLRenderer.prototype.initContext = function()
     }
 
     this.maxTextures = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
+    this.maxTextureSize = this.gl.getParameter(gl.MAX_TEXTURE_SIZE);
 
     this.glContextId = gl.id = PIXI.WebGLRenderer.glContextId++;
 
@@ -253,13 +256,13 @@ PIXI.WebGLRenderer.prototype.initContext = function()
     // Load WebGL extension
     this.extensions.compression = {};
 
-    etc1 = gl.getExtension('WEBGL_compressed_texture_etc1') || gl.getExtension('WEBKIT_WEBGL_compressed_texture_etc1');
-    pvrtc = gl.getExtension('WEBGL_compressed_texture_pvrtc') || gl.getExtension('WEBKIT_WEBGL_compressed_texture_pvrtc');
-    s3tc = gl.getExtension('WEBGL_compressed_texture_s3tc') || gl.getExtension('WEBKIT_WEBGL_compressed_texture_s3tc');
+    var etc1 = gl.getExtension('WEBGL_compressed_texture_etc1') || gl.getExtension('WEBKIT_WEBGL_compressed_texture_etc1');
+    var pvrtc = gl.getExtension('WEBGL_compressed_texture_pvrtc') || gl.getExtension('WEBKIT_WEBGL_compressed_texture_pvrtc');
+    var s3tc = gl.getExtension('WEBGL_compressed_texture_s3tc') || gl.getExtension('WEBKIT_WEBGL_compressed_texture_s3tc');
 
-    if (etc1) this.extensions.compression.ETC1 = etc1;
-    if (pvrtc) this.extensions.compression.PVRTC = pvrtc;
-    if (s3tc) this.extensions.compression.S3TC = s3tc;
+    if (etc1) { this.extensions.compression.ETC1 = etc1; }
+    if (pvrtc) { this.extensions.compression.PVRTC = pvrtc; }
+    if (s3tc) { this.extensions.compression.S3TC = s3tc; }
 };
 
 /**
@@ -278,10 +281,10 @@ PIXI.WebGLRenderer.prototype.initContext = function()
 *
 * To change the textures being batched, call this method with a new array of image keys. The old ones
 * will all be purged out and no-longer batched, and the new ones enabled.
-* 
+*
 * Note: Throws a warning if you haven't enabled Multiple Texture batching support in the Phaser Game config.
-* 
-* @method setTexturePriority
+*
+* @method PIXI.WebGLRenderer#setTexturePriority
 * @param textureNameCollection {Array} An Array of Texture Cache keys to use for multi-texture batching.
 * @return {Array} An array containing the texture keys that were enabled for batching.
 */
@@ -312,24 +315,26 @@ PIXI.WebGLRenderer.prototype.setTexturePriority = function (textureNameCollectio
     //  deal with that in their own way.
     for (var i = 0; i < this.currentBatchedTextures.length; i++)
     {
-        imageName = textureNameCollection[index];
+        imageName = this.currentBatchedTextures[i];
 
         if (!(imageName in imageCache))
         {
+            console.warn('setTexturePriority: There is no image "%s" in the image cache.', imageName);
             continue;
         }
-        
+
         imageCache[imageName].base.textureIndex = 0;
     }
     var maxTextureAvailableSpace = (maxTextureSize) - clampPot(Math.max(this.width, this.height));
     this.currentBatchedTextures.length = 0;
     // We start from 1 because framebuffer texture uses unit 0.
-    for (var index = 0; index < textureNameCollection.length; ++index)
+    for (var j = 0; j < textureNameCollection.length; ++j)
     {
-        imageName = textureNameCollection[index];
+        imageName = textureNameCollection[j];
 
         if (!(imageName in imageCache))
         {
+            console.warn('setTexturePriority: There is no image "%s" in the image cache.', imageName);
             continue;
         }
         // Unit 0 is reserved for Pixi's framebuffer
@@ -337,11 +342,15 @@ PIXI.WebGLRenderer.prototype.setTexturePriority = function (textureNameCollectio
         maxTextureAvailableSpace -= clampPot(Math.max(base.width, base.height));
         if (maxTextureAvailableSpace <= 0) {
             base.textureIndex = 0;
+            console.warn('setTexturePriority: Image "%s" was given textureIndex=0 because there is no available texture space (%s).',
+                imageName, maxTextureAvailableSpace);
         } else {
-            base.textureIndex = (1 + (index % (maxTextures - 1)));
+            base.textureIndex = (1 + (j % (maxTextures - 1)));
         }
         this.currentBatchedTextures.push(imageName);
     }
+
+    this.renderSession.maxTextureAvailableSpace = maxTextureAvailableSpace;
 
     return this.currentBatchedTextures;
 
@@ -350,7 +359,7 @@ PIXI.WebGLRenderer.prototype.setTexturePriority = function (textureNameCollectio
 /**
  * Renders the stage to its webGL view
  *
- * @method render
+ * @method PIXI.WebGLRenderer#render
  * @param stage {Stage} the Stage element to be rendered
  */
 PIXI.WebGLRenderer.prototype.render = function(stage)
@@ -385,7 +394,7 @@ PIXI.WebGLRenderer.prototype.render = function(stage)
 /**
  * Renders a Display Object.
  *
- * @method renderDisplayObject
+ * @method PIXI.WebGLRenderer#renderDisplayObject
  * @param displayObject {DisplayObject} The DisplayObject to render
  * @param projection {Point} The projection
  * @param buffer {Array} a standard WebGL buffer
@@ -397,6 +406,7 @@ PIXI.WebGLRenderer.prototype.renderDisplayObject = function(displayObject, proje
 
     // reset the render session data..
     this.renderSession.drawCount = 0;
+    this.renderSession.flushCount = 0;
 
     // make sure to flip the Y if using a render texture..
     this.renderSession.flipY = buffer ? -1 : 1;
@@ -423,7 +433,7 @@ PIXI.WebGLRenderer.prototype.renderDisplayObject = function(displayObject, proje
 /**
  * Resizes the webGL view to the specified width and height.
  *
- * @method resize
+ * @method PIXI.WebGLRenderer#resize
  * @param width {Number} the new width of the webGL view
  * @param height {Number} the new height of the webGL view
  */
@@ -449,7 +459,7 @@ PIXI.WebGLRenderer.prototype.resize = function(width, height)
 /**
  * Updates and creates a WebGL compressed texture for the renderers context.
  *
- * @method updateCompressedTexture
+ * @method PIXI.WebGLRenderer#updateCompressedTexture
  * @param texture {Texture} the texture to update
  * @return {boolean} True if the texture was successfully bound, otherwise false.
  */
@@ -470,12 +480,12 @@ PIXI.WebGLRenderer.prototype.updateCompressedTexture = function (texture) {
     gl.bindTexture(gl.TEXTURE_2D, texture._glTextures[gl.id]);
 
     gl.compressedTexImage2D(
-        gl.TEXTURE_2D, 
-        0, 
-        textureMetaData.glExtensionFormat, 
-        textureMetaData.width, 
-        textureMetaData.height, 
-        0, 
+        gl.TEXTURE_2D,
+        0,
+        textureMetaData.glExtensionFormat,
+        textureMetaData.width,
+        textureMetaData.height,
+        0,
         textureMetaData.textureData
     );
 
@@ -508,7 +518,7 @@ PIXI.WebGLRenderer.prototype.updateCompressedTexture = function (texture) {
 /**
  * Updates and Creates a WebGL texture for the renderers context.
  *
- * @method updateTexture
+ * @method PIXI.WebGLRenderer#updateTexture
  * @param texture {Texture} the texture to update
  * @return {boolean} True if the texture was successfully bound, otherwise false.
  */
@@ -569,7 +579,7 @@ PIXI.WebGLRenderer.prototype.updateTexture = function(texture)
 /**
  * Removes everything from the renderer (event listeners, spritebatch, etc...)
  *
- * @method destroy
+ * @method PIXI.WebGLRenderer#destroy
  */
 PIXI.WebGLRenderer.prototype.destroy = function()
 {
@@ -601,7 +611,7 @@ PIXI.WebGLRenderer.prototype.destroy = function()
 /**
  * Maps Pixi blend modes to WebGL blend modes.
  *
- * @method mapBlendModes
+ * @method PIXI.WebGLRenderer#mapBlendModes
  */
 PIXI.WebGLRenderer.prototype.mapBlendModes = function()
 {

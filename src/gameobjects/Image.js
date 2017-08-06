@@ -5,7 +5,8 @@
 */
 
 /**
-* An Image is a light-weight object you can use to display anything that doesn't need physics or animation.
+* An Image is a light-weight object you can use to display anything that doesn't need health, physics, or complex position monitoring.
+*
 * It can still rotate, scale, crop and receive input events. This makes it perfect for logos, backgrounds, simple buttons and other non-Sprite graphics.
 *
 * @class Phaser.Image
@@ -30,7 +31,7 @@
 * @param {Phaser.Game} game - A reference to the currently running game.
 * @param {number} [x=0] - The x coordinate of the Image. The coordinate is relative to any parent container this Image may be in.
 * @param {number} [y=0] - The y coordinate of the Image. The coordinate is relative to any parent container this Image may be in.
-* @param {string|Phaser.RenderTexture|Phaser.BitmapData|PIXI.Texture} [key] - The texture used by the Image during rendering. It can be a string which is a reference to the Cache entry, or an instance of a RenderTexture, BitmapData or PIXI.Texture.
+* @param {string|Phaser.RenderTexture|Phaser.BitmapData|PIXI.Texture} [key] - The texture used by the Image during rendering. It can be a string which is a reference to the Cache entry, or an instance of a RenderTexture, BitmapData or PIXI.Texture. If this argument is omitted, the image will receive {@link Phaser.Cache.DEFAULT the default texture} (as if you had passed '__default'), but its `key` will remain empty.
 * @param {string|number} [frame] - If this Image is using part of a sprite sheet or texture atlas you can specify the exact frame to use by giving a string or numeric index.
 */
 Phaser.Image = function (game, x, y, key, frame) {
@@ -73,6 +74,7 @@ Phaser.Component.Core.install.call(Phaser.Image.prototype, [
     'Smoothed'
 ]);
 
+Phaser.Image.prototype.preUpdateLifeSpan = Phaser.Component.LifeSpan.preUpdate;
 Phaser.Image.prototype.preUpdateInWorld = Phaser.Component.InWorld.preUpdate;
 Phaser.Image.prototype.preUpdateCore = Phaser.Component.Core.preUpdate;
 
@@ -84,7 +86,7 @@ Phaser.Image.prototype.preUpdateCore = Phaser.Component.Core.preUpdate;
 */
 Phaser.Image.prototype.preUpdate = function() {
 
-    if (!this.preUpdateInWorld())
+    if (!this.preUpdateInWorld() || !this.preUpdateLifeSpan())
     {
         return false;
     }
